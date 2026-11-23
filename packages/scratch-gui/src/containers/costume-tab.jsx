@@ -170,6 +170,10 @@ class CostumeTab extends React.Component {
     }
     async handleSurpriseCostume () {
         const costumeLibraryContent = await getCostumeLibrary();
+        if (!costumeLibraryContent.length) {
+            this.handleNewBlankCostume();
+            return;
+        }
         const item = costumeLibraryContent[Math.floor(Math.random() * costumeLibraryContent.length)];
         const vmCostume = {
             name: item.name,
@@ -183,6 +187,10 @@ class CostumeTab extends React.Component {
     }
     async handleSurpriseBackdrop () {
         const backdropLibraryContent = await getBackdropLibrary();
+        if (!backdropLibraryContent.length) {
+            this.handleNewBlankCostume();
+            return;
+        }
         const item = backdropLibraryContent[Math.floor(Math.random() * backdropLibraryContent.length)];
         const vmCostume = {
             name: item.name,
@@ -277,9 +285,9 @@ class CostumeTab extends React.Component {
             <AssetPanel
                 buttons={[
                     {
-                        title: intl.formatMessage(addLibraryMessage),
+                        title: intl.formatMessage(messages.addBlankCostumeMsg),
                         img: addLibraryIcon,
-                        onClick: addLibraryFunc
+                        onClick: this.handleNewBlankCostume
                     },
                     {
                         title: intl.formatMessage(addFileMessage),
@@ -291,19 +299,9 @@ class CostumeTab extends React.Component {
                         fileMultiple: true
                     },
                     {
-                        title: intl.formatMessage(messages.addSurpriseCostumeMsg),
-                        img: surpriseIcon,
-                        onClick: addSurpriseFunc
-                    },
-                    {
                         title: intl.formatMessage(messages.addBlankCostumeMsg),
                         img: paintIcon,
                         onClick: this.handleNewBlankCostume
-                    },
-                    {
-                        title: intl.formatMessage(addLibraryMessage),
-                        img: searchIcon,
-                        onClick: addLibraryFunc
                     }
                 ]}
                 dragType={DragConstants.COSTUME}

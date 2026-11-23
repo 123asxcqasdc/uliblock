@@ -108,23 +108,14 @@ const StageSelector = props => {
                         fileInput: fileInputRef,
                         fileMultiple: true
                     }, {
-                        title: intl.formatMessage(messages.addBackdropFromSurprise),
-                        img: surpriseIcon,
-                        onClick: onSurpriseBackdropClick
-
-                    }, {
                         title: intl.formatMessage(messages.addBackdropFromPaint),
                         img: paintIcon,
                         onClick: onEmptyBackdropClick
-                    }, {
-                        title: intl.formatMessage(messages.addBackdropFromLibrary),
-                        img: searchIcon,
-                        onClick: onNewBackdropClick
                     }
                 ]}
-                title={intl.formatMessage(messages.addBackdropFromLibrary)}
+                title={intl.formatMessage(messages.addBackdropFromPaint)}
                 tooltipPlace={isRtl(intl.locale) ? 'right' : 'left'}
-                onClick={onNewBackdropClick}
+                onClick={onEmptyBackdropClick}
             />
         </Box>
     );

@@ -94,6 +94,10 @@ class StageSelector extends React.Component {
     async handleSurpriseBackdrop (e) {
         e.stopPropagation(); // Prevent click from falling through to selecting stage.
         const backdropLibraryContent = await getBackdropLibrary();
+        if (!backdropLibraryContent.length) {
+            this.handleEmptyBackdrop(e);
+            return;
+        }
         // @todo should this not add a backdrop you already have?
         const item = backdropLibraryContent[Math.floor(Math.random() * backdropLibraryContent.length)];
         this.addBackdropFromLibraryItem(item, false);

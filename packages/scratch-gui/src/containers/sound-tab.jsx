@@ -114,6 +114,9 @@ class SoundTab extends React.Component {
 
     async handleSurpriseSound () {
         const soundLibraryContent = await getSoundLibrary();
+        if (!soundLibraryContent.length) {
+            return;
+        }
         const soundItem = soundLibraryContent[Math.floor(Math.random() * soundLibraryContent.length)];
         const vmSound = {
             format: soundItem.dataFormat,
@@ -227,9 +230,9 @@ class SoundTab extends React.Component {
         return (
             <AssetPanel
                 buttons={isSupported ? [{
-                    title: intl.formatMessage(messages.addSound),
+                    title: intl.formatMessage(messages.fileUploadSound),
                     img: addSoundFromLibraryIcon,
-                    onClick: onNewSoundFromLibraryClick
+                    onClick: this.handleFileUploadClick
                 }, {
                     title: intl.formatMessage(messages.fileUploadSound),
                     img: fileUploadIcon,
@@ -239,17 +242,9 @@ class SoundTab extends React.Component {
                     fileInput: this.setFileInput,
                     fileMultiple: true
                 }, {
-                    title: intl.formatMessage(messages.surpriseSound),
-                    img: surpriseIcon,
-                    onClick: this.handleSurpriseSound
-                }, {
                     title: intl.formatMessage(messages.recordSound),
                     img: addSoundFromRecordingIcon,
                     onClick: onNewSoundFromRecordingClick
-                }, {
-                    title: intl.formatMessage(messages.addSound),
-                    img: searchIcon,
-                    onClick: onNewSoundFromLibraryClick
                 }] : []}
                 dragType={DragConstants.SOUND}
                 isRtl={isRtl}
