@@ -17,14 +17,20 @@ jobs:
       with:
         node-version: 22
     - name: Install dependencies
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       run: npm ci --loglevel=info
     - name: Fetch
       run: npm run fetch
     - name: Compile
       run: npm run webpack:prod
-    - name: Package (AppImage + deb)
+    - name: Package (Full AppImage + deb & Lightweight Loader/Installer)
       run: |
         node release-automation/build.mjs --debian --appimage --x64 --arm64
+        bash scripts/linux-lightweight/build-deb-installer.sh amd64
+        bash scripts/linux-lightweight/build-deb-installer.sh arm64
+        bash scripts/linux-lightweight/build-appimage-loader.sh x64
+        bash scripts/linux-lightweight/build-appimage-loader.sh arm64
     - name: Print file tree
       run: node scripts/print-file-tree.mjs dist
     - name: Upload artifacts to GitHub Actions
@@ -59,6 +65,8 @@ jobs:
         npm config set prefix D:\npm-prefix
     - name: Install dependencies
       working-directory: D:\repo
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       run: npm ci --loglevel=info
     - name: Fetch
       working-directory: D:\repo

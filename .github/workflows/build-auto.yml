@@ -19,6 +19,8 @@ jobs:
         node-version: 22
         cache: npm
     - name: Install dependencies
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       run: npm ci
     - name: Prepare built-in extensions and empty asset directory
       run: |
@@ -26,5 +28,8 @@ jobs:
         node scripts/prepare-extensions.mjs
     - name: Compile
       run: npm run webpack:prod
-    - name: Package (unpacked verification)
-      run: npm run electron:package:dir
+    - name: Package (unpacked verification + lightweight installers)
+      run: |
+        npm run electron:package:dir
+        bash scripts/linux-lightweight/build-deb-installer.sh amd64
+        bash scripts/linux-lightweight/build-appimage-loader.sh x64

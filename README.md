@@ -58,9 +58,15 @@ npm run electron:start
 
 ### Упаковка установщиков
 
-**Linux (`.deb` и `.AppImage`):**
+**Linux — полные офлайн-пакеты (`.deb` и `.AppImage`):**
 ```bash
 node release-automation/build.mjs --debian --appimage --x64
+```
+
+**Linux — лёгкий AppImage-загрузчик и `.deb`-установщик (< 2 МБ, скачивают полный UliBlock с GitHub Releases при установке/первом запуске и кэшируют для офлайн-работы):**
+```bash
+bash scripts/linux-lightweight/build-deb-installer.sh amd64
+bash scripts/linux-lightweight/build-appimage-loader.sh x64
 ```
 
 **Windows (NSIS `.exe`, запускать на Windows):**

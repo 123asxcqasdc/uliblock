@@ -4,6 +4,12 @@ on:
   push:
     tags:
     - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
 permissions:
   contents: write
@@ -11,15 +17,28 @@ permissions:
 jobs:
   prepare-release:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
     steps:
+    - name: Resolve release tag
+      id: resolve
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          TAG="${{ inputs.tag }}"
+        else
+          TAG="${GITHUB_REF_NAME}"
+        fi
+        echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
     - name: Ensure GitHub Release exists for tag
       env:
         GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ steps.resolve.outputs.tag }}
       run: |
-        if ! gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-          gh release create "${GITHUB_REF_NAME}" \
+        if ! gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+          gh release create "${RELEASE_TAG}" \
             --repo "${GITHUB_REPOSITORY}" \
-            --title "UliBlock ${GITHUB_REF_NAME}" \
+            --target "${GITHUB_SHA}" \
+            --title "UliBlock ${RELEASE_TAG}" \
             --generate-notes
         fi
 
@@ -37,14 +56,20 @@ jobs:
       with:
         node-version: 22
     - name: Install dependencies
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       run: npm ci --loglevel=info
     - name: Fetch
       run: npm run fetch
     - name: Compile
       run: npm run webpack:prod
-    - name: Package (AppImage + deb)
+    - name: Package (Full AppImage + deb & Lightweight Loader/Installer)
       run: |
         node release-automation/build.mjs --debian --appimage --x64 --arm64 --production
+        bash scripts/linux-lightweight/build-deb-installer.sh amd64
+        bash scripts/linux-lightweight/build-deb-installer.sh arm64
+        bash scripts/linux-lightweight/build-appimage-loader.sh x64
+        bash scripts/linux-lightweight/build-appimage-loader.sh arm64
     - name: Print file tree
       run: node scripts/print-file-tree.mjs dist
     - name: Upload artifacts to GitHub Actions
@@ -57,8 +82,9 @@ jobs:
     - name: Upload artifacts to GitHub Release
       env:
         GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
       run: |
-        gh release upload "${GITHUB_REF_NAME}" dist/*.deb dist/*.AppImage --repo "${GITHUB_REPOSITORY}" --clobber
+        gh release upload "${RELEASE_TAG}" dist/*.deb dist/*.AppImage --repo "${GITHUB_REPOSITORY}" --clobber
 
   release-windows:
     needs: prepare-release
@@ -84,6 +110,8 @@ jobs:
         npm config set prefix D:\npm-prefix
     - name: Install dependencies
       working-directory: D:\repo
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       run: npm ci --loglevel=info
     - name: Fetch
       working-directory: D:\repo
@@ -108,7 +136,8 @@ jobs:
       working-directory: D:\repo
       env:
         GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
       shell: pwsh
       run: |
         $files = Get-ChildItem -Path dist -Filter *.exe | ForEach-Object { $_.FullName }
-        gh release upload "$env:GITHUB_REF_NAME" @files --repo "$env:GITHUB_REPOSITORY" --clobber
+        gh release upload "$env:RELEASE_TAG" @files --repo "$env:GITHUB_REPOSITORY" --clobber
