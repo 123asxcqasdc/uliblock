@@ -68,6 +68,16 @@ class Settings {
   }
 
   /**
+   * Identifies which brand/fork wrote this config file (e.g. 'uliblock').
+   */
+  get appBrand () {
+    return this.data.appBrand || null;
+  }
+  set appBrand (appBrand) {
+    this.data.appBrand = appBrand;
+  }
+
+  /**
    * Contains the version of the desktop app that was run previously.
    */
   get desktopVersion() {

@@ -80,6 +80,11 @@
 - `.github/workflows/{build-auto.yml,build.yml,release.yml}`: переписаны под Windows NSIS + Linux AppImage/`.deb` и автоматическую публикацию в GitHub Releases репозитория.
 - `scripts/linux-deb-installer/{uliblock-deb-installer.py,build-deb-installer-appimage.sh}`: добавлена сборка единого лёгкого AppImage-установщика (`UliBlock-Installer-linux-*.AppImage`, ~1 МБ) с графическим мастером (GTK3 с фолбэком на `zenity`/CLI), который скачивает актуальный `.deb` пакет UliBlock с GitHub Releases и устанавливает его в систему через `pkexec apt-get install`.
 
+- `src-main/settings.js`, `src-main/migrate.js`: добавлен маркер `appBrand: 'uliblock'` для предотвращения ложного предупреждения «Понижение не поддерживается» при переходе с профиля TurboWarp (`1.18.0`), ссылки в окне миграции переведены на `github.com/123asxcqasdc/uliblock/releases`.
+- `packages/scratch-gui/src/lib/themes/{accent/green.js,index.js}`, `packages/scratch-gui/src/components/menu-bar/tw-theme-accent.jsx`: добавлена зелёная акцентная тема в цветах иконки (`#22a630` / `#177421`) и установлена по умолчанию (`ACCENT_DEFAULT = ACCENT_GREEN`).
+- `packages/scratch-gui/src/addons/addons/{debugger,vol-slider,mouse-pos,remove-sprite-confirm,variable-manager,hide-new-variables,disable-stage-drag-select}/_manifest_entry.js`: включены по умолчанию 7 аддонов (Отладчик, Слайдер громкости проекта, Mouse position display, Подтверждение удаления спрайтов, Менеджер переменных, Скрывать новые переменные, Неперетаскиваемые спрайты в редакторе) с возможностью отключения в настройках.
+- `src-renderer/packager/standalone.html`, `scripts/packager.json`, `scripts/download-packager.mjs`: встроен кастомный упаковщик `Uli Packager` (`uli-packager-standalone-3.13.0.html`).
+
 ## Phase 7 — Документация, лицензии и финальная проверка
 
 - Обновлён `README.md` (описание UliBlock, предупреждение о безопасности, инструкции по сборке, таблица лицензий и атрибуции).

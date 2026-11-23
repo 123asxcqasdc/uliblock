@@ -15,6 +15,15 @@ const isAlreadyDownloaded = () => {
   return false;
 };
 
+if (packagerInfo.local) {
+  if (!isAlreadyDownloaded()) {
+    console.error(`Expected vendored Uli Packager (${packagerInfo.name}) at ${path} with sha256 ${packagerInfo.sha256}`);
+    process.exit(1);
+  }
+  console.log(`Using vendored packager: ${packagerInfo.name}`);
+  process.exit(0);
+}
+
 if (!isAlreadyDownloaded()) {
   console.log(`Downloading ${packagerInfo.src}`);
   console.time('Download packager');
@@ -34,7 +43,7 @@ if (!isAlreadyDownloaded()) {
     })
     .then(() => {
       process.exit(0);
-    })  
+    })
     .catch((err) => {
       console.error(err);
       process.exit(1);
