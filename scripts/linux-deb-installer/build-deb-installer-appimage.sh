@@ -58,13 +58,14 @@ cp "${ROOT_DIR}/build/512x512.png" "${APPDIR}/usr/share/icons/hicolor/512x512/ap
 ln -s "ru.c6t.uli.uliblock.png" "${APPDIR}/.DirIcon"
 cp "${ROOT_DIR}/LICENSE" "${APPDIR}/LICENSE"
 
+TOOL_CACHE="${ROOT_DIR}/.cache-tools"
+mkdir -p "$TOOL_CACHE"
+
 APPIMAGETOOL="${APPIMAGETOOL:-}"
 if [[ -z "$APPIMAGETOOL" ]]; then
   if command -v appimagetool >/dev/null 2>&1; then
     APPIMAGETOOL="$(command -v appimagetool)"
   else
-    TOOL_CACHE="${ROOT_DIR}/.cache-tools"
-    mkdir -p "$TOOL_CACHE"
     HOST_ARCH="$(uname -m)"
     APPIMAGETOOL="${TOOL_CACHE}/appimagetool-${HOST_ARCH}.AppImage"
     if [[ ! -x "$APPIMAGETOOL" ]]; then
@@ -75,10 +76,16 @@ if [[ -z "$APPIMAGETOOL" ]]; then
   fi
 fi
 
+RUNTIME_FILE="${TOOL_CACHE}/runtime-${APPIMAGE_ARCH}"
+if [[ ! -s "$RUNTIME_FILE" ]]; then
+  echo "Downloading AppImage type2-runtime for ${APPIMAGE_ARCH}..."
+  curl -fL "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-${APPIMAGE_ARCH}" -o "$RUNTIME_FILE"
+fi
+
 mkdir -p "${ROOT_DIR}/dist"
 OUT_FILE="${ROOT_DIR}/dist/UliBlock-Installer-linux-${OUT_ARCH}-${VERSION}.AppImage"
 
-ARCH="${APPIMAGE_ARCH}" APPIMAGE_EXTRACT_AND_RUN=1 "${APPIMAGETOOL}" --no-appstream "${APPDIR}" "${OUT_FILE}"
+ARCH="${APPIMAGE_ARCH}" APPIMAGE_EXTRACT_AND_RUN=1 "${APPIMAGETOOL}" --no-appstream --runtime-file "${RUNTIME_FILE}" "${APPDIR}" "${OUT_FILE}"
 chmod +x "${OUT_FILE}"
 
 echo "Built UliBlock .deb Installer AppImage: ${OUT_FILE} ($(du -h "${OUT_FILE}" | awk '{print $1}'))"

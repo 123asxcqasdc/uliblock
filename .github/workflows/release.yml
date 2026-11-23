@@ -82,7 +82,13 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
       run: |
-        gh release upload "${RELEASE_TAG}" dist/*.deb dist/*.AppImage --repo "${GITHUB_REPOSITORY}" --clobber
+        shopt -s nullglob
+        files=(dist/*.deb dist/*.AppImage)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No Linux artifacts found in dist/" >&2
+          exit 1
+        fi
+        gh release upload "${RELEASE_TAG}" "${files[@]}" --repo "${GITHUB_REPOSITORY}" --clobber
 
   release-windows:
     needs: prepare-release
@@ -135,7 +141,12 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
         RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
-      shell: pwsh
+      shell: bash
       run: |
-        $files = Get-ChildItem -Path dist -Filter *.exe | ForEach-Object { $_.FullName }
-        gh release upload "$env:RELEASE_TAG" @files --repo "$env:GITHUB_REPOSITORY" --clobber
+        shopt -s nullglob
+        files=(dist/*.exe)
+        if [ ${#files[@]} -eq 0 ]; then
+          echo "No Windows artifacts found in dist/" >&2
+          exit 1
+        fi
+        gh release upload "${RELEASE_TAG}" "${files[@]}" --repo "${GITHUB_REPOSITORY}" --clobber
