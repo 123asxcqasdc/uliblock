@@ -1,0 +1,141 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+    - name: Resolve release tag
+      id: resolve
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          TAG="${{ inputs.tag }}"
+        else
+          TAG="${GITHUB_REF_NAME}"
+        fi
+        echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+    - name: Ensure GitHub Release exists for tag
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ steps.resolve.outputs.tag }}
+      run: |
+        if ! gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+          gh release create "${RELEASE_TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "UliBlock ${RELEASE_TAG}" \
+            --generate-notes
+        fi
+
+  release-linux:
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        persist-credentials: false
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Install dependencies
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      run: npm ci --loglevel=info
+    - name: Fetch
+      run: npm run fetch
+    - name: Compile
+      run: npm run webpack:prod
+    - name: Package (Full AppImage + deb & Lightweight .deb Installer AppImage)
+      run: |
+        node release-automation/build.mjs --debian --appimage --x64 --arm64 --production
+        bash scripts/linux-deb-installer/build-deb-installer-appimage.sh x64
+        bash scripts/linux-deb-installer/build-deb-installer-appimage.sh arm64
+    - name: Print file tree
+      run: node scripts/print-file-tree.mjs dist
+    - name: Upload artifacts to GitHub Actions
+      uses: actions/upload-artifact@v4
+      with:
+        name: uliblock-linux
+        path: |
+          dist/*.deb
+          dist/*.AppImage
+    - name: Upload artifacts to GitHub Release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
+      run: |
+        gh release upload "${RELEASE_TAG}" dist/*.deb dist/*.AppImage --repo "${GITHUB_REPOSITORY}" --clobber
+
+  release-windows:
+    needs: prepare-release
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        persist-credentials: false
+        path: repo
+    - name: "Move repository to D: drive"
+      run: |
+        Copy-Item -Path repo -Destination D:\repo -Recurse
+        Remove-Item -Path repo -Recurse -Force
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: "Configure npm to use D: drive"
+      run: |
+        npm config set cache D:\npm-cache
+        npm config set prefix D:\npm-prefix
+    - name: Install dependencies
+      working-directory: D:\repo
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      run: npm ci --loglevel=info
+    - name: Fetch
+      working-directory: D:\repo
+      run: npm run fetch
+    - name: Compile
+      working-directory: D:\repo
+      run: npm run webpack:prod
+    - name: Package (NSIS x64)
+      working-directory: D:\repo
+      run: |
+        node release-automation/build.mjs --windows --x64 --production
+    - name: Print file tree
+      working-directory: D:\repo
+      run: node scripts/print-file-tree.mjs dist
+    - name: Upload artifacts to GitHub Actions
+      uses: actions/upload-artifact@v4
+      with:
+        name: uliblock-windows
+        path: |
+          D:\repo\dist\*.exe
+    - name: Upload artifacts to GitHub Release
+      working-directory: D:\repo
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
+      shell: pwsh
+      run: |
+        $files = Get-ChildItem -Path dist -Filter *.exe | ForEach-Object { $_.FullName }
+        gh release upload "$env:RELEASE_TAG" @files --repo "$env:GITHUB_REPOSITORY" --clobber

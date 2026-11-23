@@ -1,0 +1,34 @@
+name: Build (Auto)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        persist-credentials: false
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: npm
+    - name: Install dependencies
+      env:
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      run: npm ci
+    - name: Prepare built-in extensions and empty asset directory
+      run: |
+        node scripts/download-library-files.mjs
+        node scripts/prepare-extensions.mjs
+    - name: Compile
+      run: npm run webpack:prod
+    - name: Package (unpacked verification + .deb installer AppImage)
+      run: |
+        npm run electron:package:dir
+        bash scripts/linux-deb-installer/build-deb-installer-appimage.sh x64

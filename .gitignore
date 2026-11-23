@@ -1,0 +1,25 @@
+.DS_Store
+thumbs.db
+node_modules/
+.idea/
+.vscode
+
+# Built files
+dist
+dist-renderer-webpack
+dist-library-files
+dist-extensions
+extension-cache
+uliblock-extensions-cache
+src-renderer/packager/standalone.html
+.cache-tools
+
+# Debian release scripts create files that shouldn't be committed
+deb
+
+# Mac App Store
+distribution.provisionprofile
+development.provisionprofile
+
+# Apple App Store Connect API key
+*.p8

@@ -1,0 +1,151 @@
+{
+  "name": "uliblock",
+  "description": "UliBlock — lightweight Scratch/TurboWarp editor fork with community extension gallery and offline cache.",
+  "version": "1.0.0",
+  "license": "GPL-3.0",
+  "author": {
+    "name": "UliBlock Contributors (based on TurboWarp Desktop by Thomas Weber)"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "fetch": "node scripts/download-library-files.mjs && node scripts/download-packager.mjs && node scripts/prepare-extensions.mjs",
+    "webpack:compile": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack",
+    "webpack:watch": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --watch",
+    "webpack:prod": "cross-env NODE_ENV=production NODE_OPTIONS=--openssl-legacy-provider webpack",
+    "electron:start": "electron src-main/entrypoint.js",
+    "electron:package:dir": "electron-builder --dir"
+  },
+  "dependencies": {
+    "semver": "^7.7.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/preset-env": "^7.12.16",
+    "@babel/preset-react": "^7.13.13",
+    "@electron/fuses": "^2.1.2",
+    "@turbowarp/extensions": "github:TurboWarp/extensions#master",
+    "adm-zip": "^0.5.16",
+    "autoprefixer": "^9.8.8",
+    "babel-loader": "^8.4.1",
+    "copy-webpack-plugin": "^6.4.1",
+    "cross-env": "^10.1.0",
+    "css-loader": "^1.0.1",
+    "electron": "^43.8.4",
+    "electron-builder": "^26.18.0",
+    "file-loader": "^6.2.0",
+    "postcss": "^8.4.13",
+    "postcss-import": "^14.0.0",
+    "postcss-loader": "^4.2.0",
+    "postcss-simple-vars": "^6.0.3",
+    "scratch-gui": "file:./packages/scratch-gui",
+    "style-loader": "^0.23.0",
+    "url-loader": "^4.1.1",
+    "webpack": "4.47.0",
+    "webpack-cli": "^4.10.0"
+  },
+  "overrides": {
+    "webpack@4.47.0": {
+      "terser-webpack-plugin": "^4.2.3"
+    }
+  },
+  "homepage": "https://github.com/123asxcqasdc/uliblock",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/123asxcqasdc/uliblock.git"
+  },
+  "bugs": {
+    "url": "https://github.com/123asxcqasdc/uliblock/issues"
+  },
+  "main": "./src-main/entrypoint.js",
+  "build": {
+    "appId": "ru.c6t.uli.uliblock",
+    "productName": "UliBlock",
+    "files": [
+      "node_modules/**/*",
+      "src-main/**/*",
+      "src-preload/**/*",
+      "src-renderer/**/*",
+      "dist-renderer-webpack/**/*",
+      "dist-library-files/**/*",
+      "dist-extensions/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "art/icon.png",
+        "to": "icon.png"
+      },
+      {
+        "from": "art/icon.svg",
+        "to": "icon.svg"
+      }
+    ],
+    "win": {
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": "x64"
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
+      "oneClick": false,
+      "deleteAppDataOnUninstall": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "executableName": "uliblock",
+      "artifactName": "${productName}-${os}-${arch}-${version}.${ext}",
+      "icon": "./build/",
+      "synopsis": "Lightweight Scratch/TurboWarp editor with community extensions.",
+      "description": "UliBlock is a lightweight open-source fork of TurboWarp Desktop with a community extension gallery and offline disk caching.",
+      "category": "Development",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "uliblock",
+          "Keywords": "scratch;turbowarp;uliblock;"
+        }
+      },
+      "extraFiles": [
+        "linux-files"
+      ],
+      "target": [
+        {
+          "target": "deb"
+        },
+        {
+          "target": "appimage"
+        }
+      ]
+    },
+    "appImage": {
+      "license": null
+    },
+    "fileAssociations": [
+      {
+        "ext": "sb3",
+        "name": "Scratch 3 Project",
+        "description": "Scratch 3 Project",
+        "role": "Editor",
+        "mimeType": "application/x.scratch.sb3"
+      },
+      {
+        "ext": "sb2",
+        "name": "Scratch 2 Project",
+        "description": "Scratch 2 Project",
+        "role": "Editor",
+        "mimeType": "application/x.scratch.sb2"
+      },
+      {
+        "ext": "sb",
+        "name": "Scratch 1 Project",
+        "description": "Scratch 1 Project",
+        "role": "Editor",
+        "mimeType": "application/x.scratch.sb"
+      }
+    ]
+  },
+  "private": true
+}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>ru.c6t.uli.uliblock</id>
+  <launchable type="desktop-id">ru.c6t.uli.uliblock.desktop</launchable>
+  <name>UliBlock</name>
+  <summary>Lightweight Scratch/TurboWarp editor with community extension gallery and offline cache</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <developer id="ru.c6t.uli">
+    <name>UliBlock Contributors</name>
+  </developer>
+  <description>
+    <p>UliBlock is a lightweight open-source fork of TurboWarp Desktop with a compiler, dark mode, addons, PenguinMod paint editor, and a community extension gallery with offline disk caching.</p>
+  </description>
+  <url type="homepage">https://github.com/123asxcqasdc/uliblock</url>
+  <url type="bugtracker">https://github.com/123asxcqasdc/uliblock/issues</url>
+  <url type="vcs-browser">https://github.com/123asxcqasdc/uliblock</url>
+  <content_rating type="oars-1.1" />
+  <provides>
+    <mediatype>application/x.scratch.sb3</mediatype>
+    <mediatype>application/x.scratch.sb2</mediatype>
+    <mediatype>application/x.scratch.sb</mediatype>
+  </provides>
+</component>
