@@ -80,34 +80,13 @@
       }
     ],
     "win": {
-      "artifactName": "${productName} Portable ${version} ${arch}.${ext}",
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
       "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
           "arch": "x64"
-        },
-        {
-          "target": "portable",
-          "arch": "x64"
         }
-      ]
-    },
-    "appx": {
-      "artifactName": "${productName}-MS-Store-${version}-${arch}.${ext}",
-      "applicationId": "TurboWarp",
-      "displayName": "TurboWarp",
-      "identityName": "45747ThomasWeber.TurboWarpDesktop",
-      "publisher": "CN=18FA7D4F-01BF-49F2-BF56-782DCEA49C69",
-      "publisherDisplayName": "Thomas Weber",
-      "backgroundColor": "#4c97ff",
-      "showNameOnTiles": true,
-      "languages": [
-        "en-US",
-        "nl",
-        "de",
-        "it",
-        "ko"
       ]
     },
     "nsis": {
@@ -115,38 +94,6 @@
       "oneClick": false,
       "deleteAppDataOnUninstall": false,
       "allowToChangeInstallationDirectory": true
-    },
-    "mac": {
-      "artifactName": "${productName}-Setup-${version}.${ext}",
-      "icon": "build/icon.icns",
-      "category": "public.app-category.education",
-      "darkModeSupport": true,
-      "gatekeeperAssess": false,
-      "hardenedRuntime": true,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
-      "extendInfo": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "LSMultipleInstancesProhibited": true,
-        "NSCameraUsageDescription": "This app requires camera access when using the video sensing or face sensing blocks.",
-        "NSMicrophoneUsageDescription": "This app requires microphone access when recording sounds or detecting loudness."
-      },
-      "target": [
-        {
-          "arch": "universal",
-          "target": "dmg"
-        }
-      ]
-    },
-    "mas": {
-      "hardenedRuntime": false,
-      "entitlements": "build/entitlements.mas.plist",
-      "entitlementsInherit": "build/entitlements.mas.inherit.plist",
-      "provisioningProfile": "build/distribution.provisionprofile"
-    },
-    "masDev": {
-      "type": "development",
-      "provisioningProfile": "build/development.provisionprofile"
     },
     "linux": {
       "executableName": "uliblock",
@@ -170,24 +117,7 @@
         },
         {
           "target": "appimage"
-        },
-        {
-          "target": "tar.gz"
         }
-      ]
-    },
-    "snap": {
-      "summary": "Scratch mod with a compiler, dark mode, a bunch of addons, and more.",
-      "allowNativeWayland": false,
-      "executableArgs": [
-        "--ozone-platform=x11"
-      ],
-      "plugs": [
-        "default",
-        "camera",
-        "audio-record",
-        "joystick",
-        "removable-media"
       ]
     },
     "appImage": {

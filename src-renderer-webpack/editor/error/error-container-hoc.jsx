@@ -33,12 +33,10 @@ const ErrorContainerHOC = function (WrappedComponent) {
             backgroundColor: 'white',
             color: 'black'
           }}>
-            <h1>{'Desktop React Error'}</h1>
+            <h1>{'UliBlock React Error'}</h1>
             <p>
               {'If you can see this page, please '}
-              <a href="https://github.com/TurboWarp/desktop/issues" target="_blank" rel="noreferrer">{'open a GitHub issue'}</a>
-              {' or '}
-              <a href="mailto:contact@turbowarp.org" target="_blank" rel="noreferrer">{'email us'}</a>
+              <a href="https://github.com/123asxcqasdc/uliblock/issues" target="_blank" rel="noreferrer">{'open a GitHub issue'}</a>
               {' with all the information below.'}
             </p>
             <pre>{debugInformation}</pre>
