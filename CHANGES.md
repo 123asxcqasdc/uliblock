@@ -78,7 +78,7 @@
 - `src-main/update-checker.js`, `release-automation/build.mjs`: отключена проверка обновлений против `desktop.turbowarp.org/version.json`.
 - `src-renderer-webpack/editor/error/error-container-hoc.jsx`, `scripts/generate-changelogs.mjs`: ссылки на баг-трекер и релизы переведены на `123asxcqasdc/uliblock`.
 - `.github/workflows/{build-auto.yml,build.yml,release.yml}`: переписаны под Windows NSIS + Linux AppImage/`.deb` и автоматическую публикацию в GitHub Releases репозитория.
-- `scripts/linux-lightweight/{uliblock-loader.sh,build-deb-installer.sh,build-appimage-loader.sh}`: добавлена сборка лёгкого AppImage-загрузчика (`UliBlock-Loader-linux-*.AppImage`, ~1 МБ) и лёгкого `.deb`-установщика (`UliBlock-Installer-linux-*.deb`, ~40 КБ) с GUI-прогрессом (`zenity`/`kdialog`), интеграцией в меню и MIME (`.sb3/.sb2/.sb`), автоматическим обходом отсутствия `libfuse2` и офлайн-кэшированием полного бинарника.
+- `scripts/linux-deb-installer/{uliblock-deb-installer.py,build-deb-installer-appimage.sh}`: добавлена сборка единого лёгкого AppImage-установщика (`UliBlock-Installer-linux-*.AppImage`, ~1 МБ) с графическим мастером (GTK3 с фолбэком на `zenity`/CLI), который скачивает актуальный `.deb` пакет UliBlock с GitHub Releases и устанавливает его в систему через `pkexec apt-get install`.
 
 ## Phase 7 — Документация, лицензии и финальная проверка
 

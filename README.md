@@ -63,10 +63,9 @@ npm run electron:start
 node release-automation/build.mjs --debian --appimage --x64
 ```
 
-**Linux — лёгкий AppImage-загрузчик и `.deb`-установщик (< 2 МБ, скачивают полный UliBlock с GitHub Releases при установке/первом запуске и кэшируют для офлайн-работы):**
+**Linux — лёгкий AppImage-установщик `.deb` пакета (< 2 МБ, графический мастер на GTK3/zenity, который сам скачивает официальный `.deb` UliBlock с GitHub Releases и устанавливает его в систему через `pkexec apt-get install`):**
 ```bash
-bash scripts/linux-lightweight/build-deb-installer.sh amd64
-bash scripts/linux-lightweight/build-appimage-loader.sh x64
+bash scripts/linux-deb-installer/build-deb-installer-appimage.sh x64
 ```
 
 **Windows (NSIS `.exe`, запускать на Windows):**

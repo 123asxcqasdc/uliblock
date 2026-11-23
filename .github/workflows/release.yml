@@ -63,13 +63,11 @@ jobs:
       run: npm run fetch
     - name: Compile
       run: npm run webpack:prod
-    - name: Package (Full AppImage + deb & Lightweight Loader/Installer)
+    - name: Package (Full AppImage + deb & Lightweight .deb Installer AppImage)
       run: |
         node release-automation/build.mjs --debian --appimage --x64 --arm64 --production
-        bash scripts/linux-lightweight/build-deb-installer.sh amd64
-        bash scripts/linux-lightweight/build-deb-installer.sh arm64
-        bash scripts/linux-lightweight/build-appimage-loader.sh x64
-        bash scripts/linux-lightweight/build-appimage-loader.sh arm64
+        bash scripts/linux-deb-installer/build-deb-installer-appimage.sh x64
+        bash scripts/linux-deb-installer/build-deb-installer-appimage.sh arm64
     - name: Print file tree
       run: node scripts/print-file-tree.mjs dist
     - name: Upload artifacts to GitHub Actions
