@@ -1,0 +1,183 @@
+@import "../../css/colors.css";
+@import "../../css/z-index.css";
+@import "../../css/default-colors.css";
+
+.background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: $z-index-loader;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #163316;
+    background-image: radial-gradient(circle at 30% 35%, #2b5a2b 0%, #102a10 90%);
+    font-family: 'Segoe UI', Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    text-align: center;
+    color: #f0f7da;
+}
+
+.fullscreen {
+    /* Break out of the layout using position: fixed to cover the whole screen */
+    position: fixed;
+    /* Use the fullscreen stage z-index to allow covering full-screen mode */
+    z-index: $z-index-stage-wrapper-overlay;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 2.5rem;
+    border-radius: 28px;
+    background: rgba(24, 52, 24, 0.65);
+    border: 2px solid rgba(155, 188, 123, 0.55);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+    min-width: 310px;
+}
+
+.emblem-wrapper {
+    position: relative;
+    width: 132px;
+    height: 132px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+}
+
+.ring-outer {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: #7ee787;
+    border-right-color: #22a630;
+    animation: uliblock-spin 1.6s cubic-bezier(0.55, 0.25, 0.45, 0.85) infinite;
+}
+
+.ring-inner {
+    position: absolute;
+    inset: 10px;
+    border-radius: 50%;
+    border: 2px dashed rgba(216, 240, 181, 0.55);
+    animation: uliblock-spin-reverse 3.2s linear infinite;
+}
+
+.logo {
+    width: 82px;
+    height: 82px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+    animation: uliblock-float 1.8s ease-in-out infinite;
+}
+
+.brand-badge {
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #b9e6a8;
+    margin-bottom: 0.2rem;
+}
+
+.title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #fcfad6;
+    text-shadow: 0 2px 0 rgba(16, 42, 16, 0.9);
+    margin: 0.25rem 0 0.4rem;
+}
+
+.message {
+    min-height: 20px;
+    font-size: 0.95rem;
+    color: #cde5b0;
+    margin: 0.25rem 0 0.85rem;
+}
+
+.bar-outer {
+    width: 270px;
+    height: 11px;
+    border-radius: 10px;
+    background-color: rgba(12, 30, 12, 0.85);
+    border: 1px solid rgba(155, 188, 123, 0.65);
+    overflow: hidden;
+    position: relative;
+    margin: 0 auto;
+}
+
+.bar-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #22a630 0%, #7ee787 55%, #d8f0b5 100%);
+    transition: width 0.12s ease-out;
+}
+
+.dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 1rem;
+}
+
+.dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 3px;
+    background: #7ee787;
+    animation: uliblock-bounce 1.2s ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
+    background: #a3e635;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
+    background: #d8f0b5;
+}
+
+@keyframes uliblock-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes uliblock-spin-reverse {
+    0% {
+        transform: rotate(360deg);
+    }
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes uliblock-float {
+    0%, 100% {
+        transform: translateY(0px) scale(1);
+    }
+    50% {
+        transform: translateY(-7px) scale(1.04);
+    }
+}
+
+@keyframes uliblock-bounce {
+    0%, 80%, 100% {
+        transform: translateY(0) scale(0.85);
+        opacity: 0.45;
+    }
+    40% {
+        transform: translateY(-6px) scale(1.15);
+        opacity: 1;
+    }
+}

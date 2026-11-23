@@ -79,7 +79,7 @@ module.exports = [
                         to: 'static/blocks-media/high-contrast'
                     },
                     {
-                        from: 'node_modules/scratch-gui/src/lib/themes/blocks/high-contrast-media/blocks-media',
+                        from: 'packages/scratch-gui/src/lib/themes/blocks/high-contrast-media/blocks-media',
                         to: 'static/blocks-media/high-contrast',
                         force: true
                     },
@@ -92,8 +92,9 @@ module.exports = [
         ],
         resolve: {
             alias: {
-                'scratch-gui$': path.resolve(__dirname, 'node_modules/scratch-gui/src/index.js'),
-                'scratch-render-fonts$': path.resolve(__dirname, 'node_modules/scratch-gui/src/lib/tw-scratch-render-fonts'),
+                'scratch-gui$': path.resolve(__dirname, 'packages/scratch-gui/src/index.js'),
+                'scratch-gui/src': path.resolve(__dirname, 'packages/scratch-gui/src'),
+                'scratch-render-fonts$': path.resolve(__dirname, 'packages/scratch-gui/src/lib/tw-scratch-render-fonts'),
             }
         }
     },
@@ -114,6 +115,11 @@ module.exports = [
                     }
                 ]
             })
-        ]
+        ],
+        resolve: {
+            alias: {
+                'scratch-gui/src': path.resolve(__dirname, 'packages/scratch-gui/src')
+            }
+        }
     }
 ];
