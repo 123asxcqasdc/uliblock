@@ -1,141 +1,93 @@
-# TurboWarp Desktop
+# UliBlock
 
-TurboWarp as a desktop app.
+<p align="center">
+  <img src="art/icon.svg" alt="UliBlock Logo" width="128" height="128" />
+</p>
 
-If you're looking for downloads, head to: https://desktop.turbowarp.org/
+**UliBlock** — облегчённый открытый форк [TurboWarp Desktop](https://github.com/TurboWarp/desktop) с интегрированной галереей расширений сообщества и офлайн-кэшированием на диск, расширенным графическим редактором PenguinMod-Paint, кастомным экраном загрузки и минимальным весом сборки.
 
-Licensed under the GPLv3.0. See LICENSE for more information.
+- **Репозиторий:** https://github.com/123asxcqasdc/uliblock
+- **App ID:** `ru.c6t.uli.uliblock`
+- **Поддерживаемые платформы:** Windows (установщик NSIS `x64`) и Linux (`AppImage` и `.deb`, `x64`/`arm64`)
+- **Лицензия:** GNU General Public License v3.0 ([`LICENSE`](LICENSE))
 
-Parts of this repository are based on [LLK/scratch-desktop](https://github.com/LLK/scratch-desktop).
+---
 
-## Website
+## Основные отличия от TurboWarp Desktop
 
-The website source code is in the `docs` folder.
+Подробный технический список всех изменений и затронутых файлов см. в [`CHANGES.md`](CHANGES.md).
 
-## Development
+1. **Брендинг UliBlock (`ru.c6t.uli.uliblock`)** — фирменная зелёная иконка блока с буквой «U», собственные метаданные Linux (`.desktop`, `.mime.xml`, `.metainfo.xml`), окно «О программе» со ссылкой на исходный код, и кастомная анимация запуска и загрузки проектов.
+2. **Встроенная галерея расширений сообщества с офлайн-кэшем** — поверх всех встроенных расширений Scratch и официальных расширений TurboWarp (которые по-прежнему идут в комплекте офлайн) добавлена галерея [`123asxcqasdc/turbowarp-extensions`](https://123asxcqasdc.github.io/turbowarp-extensions/):
+   - поиск, 14 категорий, фильтр по 12 исходным галереям, сортировка, режимы «Сетка / Компактный», выбор варианта (официальная / форк-версия), загрузка и экспорт собственных расширений;
+   - **обязательное отображение автора и исходной галереи** в карточке каждого расширения и при выборе вариантов;
+   - автоматическое кэширование каталога, JS-кода расширений и превью в `<userData>/uliblock-extensions-cache/` с прозрачной подменой через протокол `uliblock-ext-cache://` (в `.sb3` сохраняются оригинальные `https://...` URL для полной совместимости с другими редакторами).
+3. **Загрузка расширений без диалогов и без песочницы** — расширения из любых URL загружаются без модального окна подтверждения и работают в режиме `unsandboxed`.
+4. **Облегчённый дистрибутив без встроенной библиотеки ассетов** — полностью удалены встроенные библиотеки спрайтов, костюмов, фонов и звуков (создание через «Нарисовать», «Загрузить», «Записать»).
+5. **Графический редактор `PenguinMod-Paint` + расширенный набор шрифтов** — интегрирован [`PenguinMod/PenguinMod-Paint`](https://github.com/PenguinMod/PenguinMod-Paint) вместе с 7 дополнительными шрифтами (`MopedLike`, `Archivo`, `Archivo Black`, `Bits and Bytes`, `Comic`, `Playful`, `Technological`).
+6. **Монорепозиторий с локальным `packages/scratch-gui`** — модифицированный `TurboWarp/scratch-gui` хранится прямо в `packages/scratch-gui` для упрощения поддержки и редких синхронизаций с upstream.
+7. **Только Windows (NSIS) и Linux (`AppImage` / `.deb`)** — удалены цели сборки macOS, legacy Windows 7/8/8.1, Microsoft Store (`appx`), Snap, Flatpak и лишние тарболы.
 
-We use submodules, so clone using:
+---
+
+## ⚠️ Предупреждение о безопасности
+
+В UliBlock по умолчанию отключено подтверждение загрузки расширений и включён режим **`unsandboxed`** для всех URL. Это означает, что подключённые пользовательские расширения выполняются с полным доступом к среде редактора без изоляции в песочнице.
+
+**Открывайте проекты `.sb3` и подключайте расширения только от авторов и галерей, которым вы доверяете.**
+
+---
+
+## Сборка из исходного кода
+
+Требуется **Node.js 22+**.
 
 ```bash
-git clone --recursive https://github.com/TurboWarp/desktop turbowarp-desktop
-```
-
-or run this after cloning:
-
-```bash
-git submodule init
-git submodule update
-```
-
-Install dependencies using:
-
-```bash
+# 1. Установка зависимостей
 npm ci
-```
 
-Then fetch extra library, packager, and extension files using:
-
-```bash
+# 2. Загрузка офлайн-ресурсов (официальные расширения TurboWarp и packager)
 npm run fetch
-```
 
-Repeat the three previous sets of commands every time you pull changes from GitHub.
+# 3. Сборка production-бандлов редактора и аддонов
+npm run webpack:prod
 
-Due to the security requirements mandated by custom extensions existing, our desktop app is significantly more complicated than Scratch's.
-
- - **src-main** is what runs in Electron's main process. There is no build step; this code is included as-is. `src-main/entrypoint.js` is the entry point to the entire app.
- - **src-renderer-webpack** runs in an Electron renderer process to make the editor work. This is built by webpack as **dist-renderer-webpack**.
- - **src-renderer** also runs in an Electron renderer process, but without webpack. This is used for things like the privacy policy window.
- - **src-preload** runs as preload scripts in an Electron renderer process. They export glue functions to allow renderer and main to talk to each other in a somewhat controlled manner.
- - **dist-library-files** and **dist-extensions** contain additional static resources managed by `npm run fetch`
-
-To build the webpack portions in src-renderer-webpack for development builds, run this:
-
-```bash
-npm run webpack:compile
-```
-
-You can also run this instead for source file changes to immediately trigger rebuilds:
-
-```bash
-npm run webpack:watch
-```
-
-Once you have everything compiled and fetched, you are ready to package it up for Electron. For development, start a development Electron instance with:
-
-```bash
+# 4. Запуск в режиме разработки
 npm run electron:start
 ```
 
-In Linux, The app icon won't work in the development version, but it will work in the packaged version.
+### Упаковка установщиков
 
-We've found that development can work pretty well if you open two terminals side-by-side and run `npm run webpack:watch` in one and `npm run electron:start` in the other. You can refresh the windows with ctrl+R or cmd+R for renderer file changes to apply, and manually restart the app for main file changes to apply.
-
-## Linux sandbox helper error
-
-On some Linux distributions, Electron will crash with the message `The SUID sandbox helper binary was found, but is not configured correctly. Rather than run without sandboxing I'm aborting now. You need to make sure that /home/.../turbowarp-desktop/node_modules/electron/dist/chrome-sandbox is owned by root and has mode 4755.`. Notably we have seen this happen on Debian 10 and earlier and Ubuntu 24.04 and later.
-
-For development, you can run these commands to enable unprivileged user namespaces until you reboot:
-
+**Linux (`.deb` и `.AppImage`):**
 ```bash
-# Enable unprivileged user namespaces.
-sudo sysctl -w kernel.unprivileged_userns_clone=1
-
-# Stop AppArmor from preventing unprivileged user namespace creation by default.
-# If your distribution does not use AppArmor then you can ignore the error.
-sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+node release-automation/build.mjs --debian --appimage --x64
 ```
 
-There are ways to make this permanent, but we don't think you should be making permanent kernel configuration changes just to develop this app. This error won't happen in the final .deb package, Flathub, or Snap Store releases.
-
-## Final production-ready builds
-
-The development version of the app will be larger and slower than the final release builds.
-
-Build an optimized version of the webpack portions with:
-
-```bash
-npm run webpack:prod
+**Windows (NSIS `.exe`, запускать на Windows):**
+```powershell
+node release-automation/build.mjs --windows --x64
 ```
 
-Then to package up the final Electron binaries, use either our build script `release-automation/build.mjs` (see [release-automation/README.md](release-automation/README.md)) or the [electron-builder CLI](https://www.electron.build/cli). Either way the final builds are saved in the `dist` folder. Here are some examples using the electron-builder CLI directly:
+CI/CD настроено в `.github/workflows/`:
+- `build-auto.yml` — автоматическая проверка сборки на каждый `push` и Pull Request;
+- `build.yml` — ручная сборка Linux (`.deb`, `.AppImage`) и Windows (`UliBlock-Setup-*.exe`);
+- `release.yml` — автоматическая публикация релизов при создании тега `v*`.
 
-```bash
-# You can also do manual builds with electron-builder's CLI, for example:
-# Windows installer
-npx electron-builder --windows nsis --x64
-# macOS DMG
-npx electron-builder --mac dmg --universal
-# Linux Debian
-npx electron-builder --linux deb
-```
+---
 
-You can typically only package for a certain operating system while on that operating system.
+## Лицензии и атрибуция
 
-## Code signing policy
+UliBlock распространяется под лицензией **GNU General Public License v3.0** ([`LICENSE`](LICENSE)).
 
-TurboWarp Desktop uses a free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+В основе UliBlock лежат следующие открытые проекты (все исходные лицензии и уведомления об авторстве сохранены):
 
- * Approvers:
-   * [GarboMuffin](https://github.com/GarboMuffin)
- * Privacy policy: https://desktop.turbowarp.org/privacy.html
+| Компонент | Проект / Источник | Лицензия |
+| --- | --- | --- |
+| Оболочка приложения | [TurboWarp Desktop](https://github.com/TurboWarp/desktop) (Thomas Weber и участники) | GPL-3.0 |
+| Интерфейс редактора | [TurboWarp/scratch-gui](https://github.com/TurboWarp/scratch-gui) | GPL-3.0 |
+| Движок и базовые компоненты | [Scratch](https://scratch.mit.edu/) (Scratch Foundation / MIT) | BSD-3-Clause / MIT / AGPL-3.0 |
+| Графический редактор | [PenguinMod-Paint](https://github.com/PenguinMod/PenguinMod-Paint) | GPL-3.0 |
+| Дополнительные шрифты | [penguinmod-render-fonts](https://github.com/PenguinMod/penguinmod-render-fonts) (см. файлы лицензий в `packages/scratch-gui/src/lib/tw-scratch-render-fonts/`) | OFL / Apache-2.0 / MIT / BSD |
+| Галерея расширений сообщества | [123asxcqasdc/turbowarp-extensions](https://123asxcqasdc.github.io/turbowarp-extensions/) и авторы расширений из 12 исходных галерей | По лицензии каждого конкретного расширения |
 
-## Advanced customizations
-
-TurboWarp Desktop lets you configure custom JS and CSS without rebuilding the app.
-
-Find TurboWarp Desktop's data path by using the list below or by clicking "?" in the top right corner, then "Desktop Settings", then "Open User Data", then opening the highlighted folder, or refer to this list:
-
- - Windows (except Microsoft Store): `%APPDATA%/turbowarp-desktop`
- - Microsoft Store: Open `%LOCALAPPDATA%/Packages`, find the folder with the word `TurboWarpDesktop` in it, then open `LocalCache/Roaming/turbowarp-desktop`
- - macOS (except Mac App Store): `~/Library/Application Support/turbowarp-desktop`
- - Mac App Store: `~/Library/Containers/org.turbowarp.desktop/Data/Library/Application Support/turbowarp-desktop` (note that the `org.turbowarp.desktop` part may appear as `TurboWarp` in Finder)
- - Linux (except Flatpak and Snap): `~/.config/turbowarp-desktop`
- - Linux (Flatpak): `~/.var/app/org.turbowarp.TurboWarp/config/turbowarp-desktop`
- - Linux (Snap): `~/snap/turbowarp-desktop/current/.config/turbowarp-desktop`
-
-Create the file `userscript.js` in this folder to configure custom JS. Create the file `userstyle.css` in this folder to configure custom CSS. Completely restart TurboWarp Desktop (including all windows) to apply.
-
-## Uninstall
-
-See https://desktop.turbowarp.org/uninstall
+UliBlock не аффилирован с Scratch, TurboWarp или PenguinMod.
