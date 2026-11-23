@@ -28,7 +28,8 @@ jobs:
         node scripts/prepare-extensions.mjs
     - name: Compile
       run: npm run webpack:prod
-    - name: Package (unpacked verification + .deb installer AppImage)
+    - name: Package (deb verification + .deb installer AppImages)
       run: |
-        npm run electron:package:dir
+        node release-automation/build.mjs --debian --x64
         bash scripts/linux-deb-installer/build-deb-installer-appimage.sh x64
+        bash scripts/linux-deb-installer/build-deb-installer-appimage.sh arm64

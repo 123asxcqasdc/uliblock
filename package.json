@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "license": "GPL-3.0",
   "author": {
-    "name": "UliBlock Contributors (based on TurboWarp Desktop by Thomas Weber)"
+    "name": "UliBlock Contributors (based on TurboWarp Desktop by Thomas Weber)",
+    "email": "uliblock@users.noreply.github.com"
   },
   "type": "commonjs",
   "scripts": {
@@ -97,6 +98,7 @@
     },
     "linux": {
       "executableName": "uliblock",
+      "maintainer": "UliBlock Contributors <uliblock@users.noreply.github.com>",
       "artifactName": "${productName}-${os}-${arch}-${version}.${ext}",
       "icon": "./build/",
       "synopsis": "Lightweight Scratch/TurboWarp editor with community extensions.",
