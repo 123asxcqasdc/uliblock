@@ -157,7 +157,7 @@ const selectAndUpdateMicroBit = async progress => {
  * @returns {boolean} True if the browser appears to support updating a micro:bit.
  */
 const isMicroBitUpdateSupported = () =>
-    !!(navigator.usb && navigator.usb.requestDevice);
+    !!(hexUrl && navigator.usb && navigator.usb.requestDevice);
 
 export {
     isMicroBitUpdateSupported,

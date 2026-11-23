@@ -19,7 +19,8 @@ npm-*
 /locale
 
 # Other generated source
-/src/generated
+/src/generated/*
+!/src/generated/microbit-hex-url.cjs
 
 # Downloaded during "npm install"
 /static/microbit
