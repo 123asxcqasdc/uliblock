@@ -59,11 +59,15 @@ const handleClickAbout = () => {
 };
 
 const handleClickSourceCode = () => {
-  window.open('https://github.com/TurboWarp');
+  window.open('https://github.com/123asxcqasdc/uliblock');
 };
 
 const securityManager = {
   // Everything not specified here falls back to the scratch-gui security manager
+
+  // UliBlock: load extensions without confirmation dialog and allow unsandboxed mode
+  canLoadExtensionFromProject: async () => true,
+  getSandboxMode: () => 'unsandboxed',
 
   // Managed by Electron main process:
   canReadClipboard: () => true,
