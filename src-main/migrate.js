@@ -21,6 +21,7 @@ const desktopVersion = packageJSON.version;
 const electronVersion = process.versions.electron;
 
 const writeCurrentVersion = async () => {
+  settings.appBrand = 'uliblock';
   settings.dataVersion = MigrateWindow.LATEST_VERSION;
   settings.desktopVersion = desktopVersion;
   settings.electronVersion = electronVersion;
@@ -28,7 +29,7 @@ const writeCurrentVersion = async () => {
 };
 
 const openUpdatePage = () => {
-  openExternal('https://desktop.turbowarp.org/');
+  openExternal('https://github.com/123asxcqasdc/uliblock/releases');
 };
 
 /**
@@ -110,10 +111,22 @@ const migrate = async () => {
 
   // If we are using the same version as before, we don't need to do anything.
   if (
+    settings.appBrand === 'uliblock' &&
     settings.dataVersion === MigrateWindow.LATEST_VERSION &&
     settings.desktopVersion === desktopVersion &&
     settings.electronVersion === electronVersion
   ) {
+    return true;
+  }
+
+  // If this profile was written by upstream TurboWarp Desktop (e.g. 1.18.0) or an
+  // earlier pre-brand build, adopt it cleanly for UliBlock without a false downgrade error.
+  if (settings.appBrand !== 'uliblock') {
+    if (settings.dataVersion < MigrateWindow.LATEST_VERSION) {
+      await MigrateWindow.run(writeCurrentVersion);
+    } else {
+      await writeCurrentVersion();
+    }
     return true;
   }
 
@@ -143,7 +156,7 @@ const migrate = async () => {
       message: translate('downgrade-warning.title'),
       detail: translate('downgrade-warning.message')
         .replace('{APP_NAME}', APP_NAME)
-        .replace('{website}', 'desktop.turbowarp.org')
+        .replace('{website}', 'github.com/123asxcqasdc/uliblock/releases')
         .replace('{debugInfo}', changes.join(', ')),
       buttons: [
         translate('downgrade-warning.exit'),

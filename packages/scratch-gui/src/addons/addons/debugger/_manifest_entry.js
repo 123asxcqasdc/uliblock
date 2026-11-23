@@ -105,6 +105,7 @@ const manifest = {
   ],
   "tags": [
     "new"
-  ]
+  ],
+  "enabledByDefault": true
 };
 export default manifest;
