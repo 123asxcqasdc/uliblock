@@ -21,6 +21,7 @@ import {
 } from 'scratch-gui/src/reducers/tw';
 import {WrappedFileHandle} from './filesystem-api.js';
 import {setStrings} from '../prompt/prompt.js';
+import CommunityGalleryModal from './community-gallery-modal.jsx';
 
 let mountedOnce = false;
 
@@ -85,10 +86,13 @@ const DesktopHOC = function (WrappedComponent) {
     constructor (props) {
       super(props);
       this.state = {
-        title: ''
+        title: '',
+        communityGalleryOpen: false
       };
       this.handleUpdateProjectTitle = this.handleUpdateProjectTitle.bind(this);
       this.handleRuntimeDisposed = this.handleRuntimeDisposed.bind(this);
+      this.handleOpenCommunityGallery = this.handleOpenCommunityGallery.bind(this);
+      this.handleCloseCommunityGallery = this.handleCloseCommunityGallery.bind(this);
 
       // Changing locale always re-mounts this component
       const stateFromMain = EditorPreload.setLocale(this.props.locale);
@@ -113,6 +117,7 @@ const DesktopHOC = function (WrappedComponent) {
         })));
 
       this.props.vm.runtime.on('RUNTIME_DISPOSED', this.handleRuntimeDisposed);
+      window.__ULIBLOCK_OPEN_COMMUNITY_GALLERY__ = this.handleOpenCommunityGallery;
 
       // This component is re-mounted when the locale changes, but we only want to load
       // the initial project once.
@@ -185,6 +190,19 @@ const DesktopHOC = function (WrappedComponent) {
     }
     componentWillUnmount () {
       this.props.vm.runtime.off('RUNTIME_DISPOSED', this.handleRuntimeDisposed);
+      if (window.__ULIBLOCK_OPEN_COMMUNITY_GALLERY__ === this.handleOpenCommunityGallery) {
+        delete window.__ULIBLOCK_OPEN_COMMUNITY_GALLERY__;
+      }
+    }
+    handleOpenCommunityGallery () {
+      this.setState({
+        communityGalleryOpen: true
+      });
+    }
+    handleCloseCommunityGallery () {
+      this.setState({
+        communityGalleryOpen: false
+      });
     }
     handleRuntimeDisposed () {
       EditorPreload.dropPermissions();
@@ -214,34 +232,46 @@ const DesktopHOC = function (WrappedComponent) {
         ...props
       } = this.props;
       return (
-        <WrappedComponent
-          projectTitle={this.state.title}
-          onUpdateProjectTitle={this.handleUpdateProjectTitle}
-          onClickAddonSettings={handleClickAddonSettings}
-          onClickNewWindow={handleClickNewWindow}
-          onClickPackager={handleClickPackager}
-          onClickAbout={[
-            {
-              title: this.messages['in-app-about.desktop-settings'],
-              onClick: handleClickDesktopSettings
-            },
-            {
-              title: this.messages['in-app-about.privacy'],
-              onClick: handleClickPrivacy
-            },
-            {
-              title: this.messages['in-app-about.about'],
-              onClick: handleClickAbout
-            },
-            {
-              title: this.messages['in-app-about.source-code'],
-              onClick: handleClickSourceCode
-            },
-          ]}
-          onClickDesktopSettings={handleClickDesktopSettings}
-          securityManager={securityManager}
-          {...props}
-        />
+        <React.Fragment>
+          <WrappedComponent
+            projectTitle={this.state.title}
+            onUpdateProjectTitle={this.handleUpdateProjectTitle}
+            onClickAddonSettings={handleClickAddonSettings}
+            onClickNewWindow={handleClickNewWindow}
+            onClickPackager={handleClickPackager}
+            onClickAbout={[
+              {
+                title: '🐌 Галерея расширений сообщества',
+                onClick: this.handleOpenCommunityGallery
+              },
+              {
+                title: this.messages['in-app-about.desktop-settings'],
+                onClick: handleClickDesktopSettings
+              },
+              {
+                title: this.messages['in-app-about.privacy'],
+                onClick: handleClickPrivacy
+              },
+              {
+                title: this.messages['in-app-about.about'],
+                onClick: handleClickAbout
+              },
+              {
+                title: this.messages['in-app-about.source-code'],
+                onClick: handleClickSourceCode
+              },
+            ]}
+            onClickDesktopSettings={handleClickDesktopSettings}
+            securityManager={securityManager}
+            {...props}
+          />
+          {this.state.communityGalleryOpen ? (
+            <CommunityGalleryModal
+              vm={vm}
+              onClose={this.handleCloseCommunityGallery}
+            />
+          ) : null}
+        </React.Fragment>
       );
     }
   }

@@ -20,6 +20,7 @@ const RichPresence = require('../rich-presence.js');
 const FileAccessWindow = require('./file-access-window.js');
 const ExtensionDocumentationWindow = require('./extension-documentation.js');
 const SecurityPromptWindow = require('./security-prompt');
+const {extensionCache} = require('../extension-cache');
 
 const TYPE_FILE = 'file';
 const TYPE_URL = 'url';
@@ -576,6 +577,41 @@ class EditorWindow extends ProjectRunningWindow {
     this.ipc.handle('set-is-full-screen', (event, isFullScreen) => {
       this.isInEditorFullScreen = !!isFullScreen;
     });
+
+    this.ipc.handle('community-gallery:get-catalog', (event, options) => (
+      extensionCache.getCatalog(options)
+    ));
+
+    this.ipc.handle('community-gallery:ensure-cached', (event, params) => (
+      extensionCache.ensureExtensionCached(params, (progress) => {
+        if (!this.window.isDestroyed()) {
+          this.window.webContents.send('community-gallery:progress', {
+            url: params && params.url,
+            ...progress
+          });
+        }
+      })
+    ));
+
+    this.ipc.handle('community-gallery:get-source', (event, params) => (
+      extensionCache.getExtensionSource(params)
+    ));
+
+    this.ipc.handle('community-gallery:get-cached-entries', () => (
+      extensionCache.getCachedEntries()
+    ));
+
+    this.ipc.handle('community-gallery:get-stats', () => (
+      extensionCache.getCacheStats()
+    ));
+
+    this.ipc.handle('community-gallery:remove-cached', (event, url) => (
+      extensionCache.removeCachedExtension(url)
+    ));
+
+    this.ipc.handle('community-gallery:clear-cache', () => (
+      extensionCache.clearCache()
+    ));
 
     this.loadURL('tw-editor://./gui/gui.html');
     this.show();

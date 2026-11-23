@@ -4,6 +4,7 @@ const nodeURL = require('url');
 const {app, protocol, net} = require('electron');
 const {getDist, getPlatform} = require('./platform');
 const packageJSON = require('../package.json');
+const {extensionCache} = require('./extension-cache');
 
 /**
  * @typedef Metadata
@@ -106,16 +107,27 @@ MIME_TYPES.set('.zip', 'application/zip');
 MIME_TYPES.set('.xml', 'text/xml');
 MIME_TYPES.set('.md', 'text/markdown');
 
-protocol.registerSchemesAsPrivileged(Object.entries(FILE_SCHEMES).map(([scheme, metadata]) => ({
-  scheme,
-  privileges: {
-    standard: !!metadata.standard,
-    supportFetchAPI: !!metadata.supportFetch,
-    corsEnabled: !!metadata.cors,
-    secure: !!metadata.secure,
-    stream: !!metadata.stream
+protocol.registerSchemesAsPrivileged([
+  ...Object.entries(FILE_SCHEMES).map(([scheme, metadata]) => ({
+    scheme,
+    privileges: {
+      standard: !!metadata.standard,
+      supportFetchAPI: !!metadata.supportFetch,
+      corsEnabled: !!metadata.cors,
+      secure: !!metadata.secure,
+      stream: !!metadata.stream
+    }
+  })),
+  {
+    scheme: 'uliblock-ext-cache',
+    privileges: {
+      standard: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      secure: true
+    }
   }
-})));
+]);
 
 /**
  * Promisified zlib.brotliDecompress
@@ -159,7 +171,7 @@ const createErrorPageHTML = (request, errorMessage) => `<!DOCTYPE html>
   </head>
   <body bgcolor="white" text="black">
     <h1>Protocol handler error</h1>
-    <p>If you can see this page, <a href="https://github.com/TurboWarp/desktop/issues" target="_blank" rel="noreferrer">please open a GitHub issue</a> or <a href="mailto:contact@turbowarp.org" target="_blank" rel="noreferrer">email us</a> with all the information below.</p>
+    <p>If you can see this page, <a href="https://github.com/123asxcqasdc/uliblock/issues" target="_blank" rel="noreferrer">please open a GitHub issue</a> with all the information below.</p>
     <pre>${escapeXML(errorMessage)}</pre>
     <pre>URL: ${escapeXML(request.url)}</pre>
     <pre>Version ${escapeXML(packageJSON.version)}, Electron ${escapeXML(process.versions.electron)}, Platform ${escapeXML(getPlatform())} ${escapeXML(process.arch)}, Distribution ${escapeXML(getDist())}</pre>
@@ -402,5 +414,9 @@ app.whenReady().then(() => {
         protocol.registerFileProtocol(scheme, createLegacyFileProtocolHandler(metadata));
       }
     }
+  }
+
+  if (protocol.handle) {
+    protocol.handle('uliblock-ext-cache', (request) => extensionCache.handleProtocolRequest(request));
   }
 });

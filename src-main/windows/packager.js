@@ -3,6 +3,7 @@ const {PACKAGER_NAME} = require('../brand');
 const PackagerPreviewWindow = require('./packager-preview');
 const prompts = require('../prompts');
 const FileAccessWindow = require('./file-access-window');
+const {extensionCache} = require('../extension-cache');
 
 class PackagerWindow extends AbstractWindow {
   constructor (editorWindow) {
@@ -94,6 +95,13 @@ class PackagerWindow extends AbstractWindow {
     if (parsed.origin === 'https://extensions.turbowarp.org') {
       return callback({
         redirectURL: `tw-extensions://./${parsed.pathname}`
+      });
+    }
+
+    const cachedCommunityRedirect = extensionCache.getRedirectUrlForCachedExtension(details.url);
+    if (cachedCommunityRedirect) {
+      return callback({
+        redirectURL: cachedCommunityRedirect
       });
     }
 

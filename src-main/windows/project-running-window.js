@@ -4,6 +4,7 @@ const AbtractWindow = require('./abstract');
 const settings = require('../settings');
 const askForMediaAccess = require('../media-permissions');
 const SecurityPromptWindow = require('./security-prompt');
+const {extensionCache} = require('../extension-cache');
 
 const listLocalFiles = async () => {
   const files = await fsPromises.readdir(path.join(__dirname, '../../dist-library-files/'));
@@ -125,6 +126,13 @@ class ProjectRunningWindow extends AbtractWindow {
       return callback({
         // pathname always has a leading / already
         redirectURL: `tw-extensions://.${parsed.pathname}`
+      });
+    }
+
+    const cachedCommunityRedirect = extensionCache.getRedirectUrlForCachedExtension(details.url);
+    if (cachedCommunityRedirect) {
+      return callback({
+        redirectURL: cachedCommunityRedirect
       });
     }
 

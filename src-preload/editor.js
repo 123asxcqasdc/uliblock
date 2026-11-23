@@ -22,7 +22,21 @@ contextBridge.exposeInMainWorld('EditorPreload', {
   setExportForPackager: (callback) => {
     exportForPackager = callback;
   },
-  setIsFullScreen: (isFullScreen) => ipcRenderer.invoke('set-is-full-screen', isFullScreen)
+  setIsFullScreen: (isFullScreen) => ipcRenderer.invoke('set-is-full-screen', isFullScreen),
+  communityGallery: {
+    getCatalog: (options) => ipcRenderer.invoke('community-gallery:get-catalog', options),
+    ensureCached: (params) => ipcRenderer.invoke('community-gallery:ensure-cached', params),
+    getSource: (params) => ipcRenderer.invoke('community-gallery:get-source', params),
+    getCachedEntries: () => ipcRenderer.invoke('community-gallery:get-cached-entries'),
+    getStats: () => ipcRenderer.invoke('community-gallery:get-stats'),
+    removeCached: (url) => ipcRenderer.invoke('community-gallery:remove-cached', url),
+    clearCache: () => ipcRenderer.invoke('community-gallery:clear-cache'),
+    onProgress: (callback) => {
+      const listener = (_event, data) => callback(data);
+      ipcRenderer.on('community-gallery:progress', listener);
+      return () => ipcRenderer.removeListener('community-gallery:progress', listener);
+    }
+  }
 });
 
 let exportForPackager = () => Promise.reject(new Error('exportForPackager missing'));
