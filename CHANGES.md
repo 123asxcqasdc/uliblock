@@ -91,6 +91,13 @@
 - Создан `CHANGES.md` с полной картой отличий от upstream.
 - Подтверждена сохранность `LICENSE` (GPL-3.0) и лицензий сторонних компонентов.
 
+## v1.1.1 — Обновление упаковщика, дефолтная улитка и сайт GitHub Pages
+
+- `package.json`, `package-lock.json`: версия обновлена до `1.1.1`.
+- `src-renderer/packager/standalone.html`, `scripts/packager.json`: обновлён встроенный упаковщик `Uli Packager`.
+- `packages/scratch-gui/src/lib/default-project/{uli-snail.svg,index.js,project-data.js}`: дефолтный костюм спрайта в новом проекте заменён на улитку UliBlock (`e917772c290cfff2d8ee776e84de7985.svg`, центр вращения `62.00 : 53.84`).
+- `docs/{index.html,screenshot.png,icon.svg,favicon.ico,snail.svg,.nojekyll}`, `.github/workflows/pages.yml`: создан сайт UliBlock для GitHub Pages (`https://123asxcqasdc.github.io/uliblock/`) с интерактивным подбором сборки (Windows / Linux с выбором архитектуры и дистрибутива; для Debian/Ubuntu выдаётся только лёгкий AppImage-установщик).
+
 ---
 
 ## Рекомендации по редкой синхронизации с upstream

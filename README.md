@@ -6,6 +6,7 @@
 
 **UliBlock** — облегчённый открытый форк [TurboWarp Desktop](https://github.com/TurboWarp/desktop) с интегрированной галереей расширений сообщества и офлайн-кэшированием на диск, расширенным графическим редактором PenguinMod-Paint, кастомным экраном загрузки и минимальным весом сборки.
 
+- **Сайт:** https://123asxcqasdc.github.io/uliblock/
 - **Репозиторий:** https://github.com/123asxcqasdc/uliblock
 - **App ID:** `ru.c6t.uli.uliblock`
 - **Поддерживаемые платформы:** Windows (установщик NSIS `x64`) и Linux (`AppImage` и `.deb`, `x64`/`arm64`)
