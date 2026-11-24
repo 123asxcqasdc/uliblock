@@ -44,6 +44,15 @@ const projectData = translateFunction => {
                         dataFormat: 'svg',
                         rotationCenterX: 240,
                         rotationCenterY: 180
+                    },
+                    {
+                        assetId: '9838d02002d05f88dc54d96494fbc202',
+                        name: 'xy-grid',
+                        bitmapResolution: 2,
+                        md5ext: '9838d02002d05f88dc54d96494fbc202.png',
+                        dataFormat: 'png',
+                        rotationCenterX: 480,
+                        rotationCenterY: 360
                     }
                 ],
                 sounds: [],

@@ -1,5 +1,6 @@
 import {Theme} from '.';
 import AddonHooks from '../../addons/hooks';
+import {applyActiveCustomTheme} from './uli-custom-themes';
 import './global-styles.css';
 
 const BLOCK_COLOR_NAMES = [
@@ -72,6 +73,9 @@ const applyGuiColors = theme => {
         primary: guiColors['looks-secondary']
     };
     AddonHooks.recolorCallbacks.forEach(i => i());
+
+    // Re-apply active UliBlock custom theme on top of base theme variables
+    applyActiveCustomTheme();
 };
 
 export {

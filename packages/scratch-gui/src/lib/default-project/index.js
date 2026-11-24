@@ -3,6 +3,7 @@ import projectData from './project-data';
 /* eslint-disable import/no-unresolved */
 import overrideDefaultProject from '!arraybuffer-loader!./override-default-project.sb3';
 import backdrop from '!raw-loader!./cd21514d0531fdffb22204e0ec5ed84a.svg';
+import backdropXyGrid from '!arraybuffer-loader!./xy-grid.png';
 import costume1 from '!raw-loader!./uli-snail.svg';
 /* eslint-enable import/no-unresolved */
 import {TextEncoder} from '../tw-text-encoder';
@@ -36,6 +37,11 @@ const defaultProject = translator => {
         assetType: 'ImageVector',
         dataFormat: 'SVG',
         data: encoder.encode(backdrop)
+    }, {
+        id: '9838d02002d05f88dc54d96494fbc202',
+        assetType: 'ImageBitmap',
+        dataFormat: 'PNG',
+        data: new Uint8Array(backdropXyGrid)
     }, {
         id: 'e917772c290cfff2d8ee776e84de7985',
         assetType: 'ImageVector',

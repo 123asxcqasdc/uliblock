@@ -98,6 +98,21 @@
 - `packages/scratch-gui/src/lib/default-project/{uli-snail.svg,index.js,project-data.js}`: дефолтный костюм спрайта в новом проекте заменён на улитку UliBlock (`e917772c290cfff2d8ee776e84de7985.svg`, центр вращения `62.00 : 53.84`).
 - `docs/{index.html,screenshot.png,icon.svg,favicon.ico,snail.svg,.nojekyll}`, `.github/workflows/pages.yml`: создан сайт UliBlock для GitHub Pages (`https://123asxcqasdc.github.io/uliblock/`) с интерактивным подбором сборки (Windows / Linux с выбором архитектуры и дистрибутива; для Debian/Ubuntu выдаётся только лёгкий AppImage-установщик).
 
+## v1.2.0 — Автообновление, редактор тем, координатная сетка и исправление установщика
+
+- `package.json`, `package-lock.json`, `docs/index.html`: версия обновлена до `1.2.0`.
+- `scripts/linux-deb-installer/uliblock-deb-installer.py`:
+  - Исправлен цвет текста на зелёной кнопке `.uli-primary` в KDE/Breeze (`button.uli-primary label { color: #ffffff; }` с приоритетом `STYLE_PROVIDER_PRIORITY_USER`).
+  - Добавлен запасной поиск последнего тега через редирект `/releases/latest` (без лимитов GitHub API).
+  - Добавлен флаг `-autoupdate` (и `--wait-pid`): при запуске из автообновления ставит пакет без лишних подтверждений (оставляя только запрос пароля администратора) и автоматически запускает обновлённый UliBlock; при ручном запуске по-прежнему ждёт нажатия кнопки.
+- `src-main/{update-checker.js,auto-updater.js,windows/update.js,protocols.js}`, `src-preload/update.js`, `src-renderer/update/update.html`:
+  - Включена проверка обновлений при каждом входе в редактор через `https://github.com/123asxcqasdc/uliblock/releases/latest`.
+  - При согласии на обновление UliBlock скачивает установщик, закрывает все свои окна/процессы и запускает его в автоматическом режиме (`-autoupdate` на Linux, `/S` на Windows).
+- `packages/scratch-gui/src/{lib/themes/uli-custom-themes.js,lib/themes/guiHelpers.js,components/menu-bar/uli-theme-editor-menu-item.jsx,components/menu-bar/settings-menu.jsx,components/uli-theme-editor/*,containers/uli-theme-editor-modal.jsx,reducers/modals.js}`:
+  - Добавлена кнопка **«Редактор тем»** рядом с выбором акцентного цвета: создание/переключение/импорт/экспорт тем, свой акцентный цвет и цвет шапки, фоновые обои редактора (яркость, размытие, режим заполнения), кастомные иконки элементов управления и пользовательский CSS поверх всех стилей.
+- `packages/scratch-gui/src/lib/default-project/{xy-grid.png,index.js,project-data.js}`:
+  - Добавлена координатная сетка `xy-grid` вторым фоном нового проекта по умолчанию (первый белый фон остаётся активным).
+
 ---
 
 ## Рекомендации по редкой синхронизации с upstream
