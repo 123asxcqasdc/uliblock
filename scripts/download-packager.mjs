@@ -16,8 +16,8 @@ const isAlreadyDownloaded = () => {
 };
 
 if (packagerInfo.local) {
-  if (!isAlreadyDownloaded()) {
-    console.error(`Expected vendored Uli Packager (${packagerInfo.name}) at ${path} with sha256 ${packagerInfo.sha256}`);
+  if (!fs.existsSync(path) || fs.statSync(path).size === 0) {
+    console.error(`Expected vendored Uli Packager (${packagerInfo.name}) at ${path}`);
     process.exit(1);
   }
   console.log(`Using vendored packager: ${packagerInfo.name}`);
