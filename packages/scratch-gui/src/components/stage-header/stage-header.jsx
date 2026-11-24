@@ -96,6 +96,7 @@ const StageHeaderComponent = function (props) {
                     <img
                         alt={props.intl.formatMessage(messages.openSettingsMessage)}
                         className={styles.stageButtonIcon}
+                        data-uli-icon="settings"
                         draggable={false}
                         src={settingsIcon}
                         title={props.intl.formatMessage(messages.openSettingsMessage)}
@@ -128,6 +129,7 @@ const StageHeaderComponent = function (props) {
                     <img
                         alt={props.intl.formatMessage(messages.fullScreenMessage)}
                         className={styles.stageButtonIcon}
+                        data-uli-icon="fullscreen"
                         draggable={false}
                         src={fullScreenIcon}
                         title={props.intl.formatMessage(messages.fullscreenControl)}
@@ -215,6 +217,7 @@ const StageHeaderComponent = function (props) {
                                 <img
                                     alt={props.intl.formatMessage(messages.fullStageSizeMessage)}
                                     className={styles.stageButtonIcon}
+                                    data-uli-icon="fullscreen"
                                     draggable={false}
                                     src={fullScreenIcon}
                                     title={props.intl.formatMessage(messages.fullscreenControl)}

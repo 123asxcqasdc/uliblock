@@ -23,6 +23,7 @@ const GreenFlagComponent = function (props) {
                 }
             )}
             draggable={false}
+            data-uli-icon="green-flag"
             src={greenFlagIcon}
             title={title}
             onClick={onClick}

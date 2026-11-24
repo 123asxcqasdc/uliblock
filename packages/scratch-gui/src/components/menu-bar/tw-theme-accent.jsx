@@ -11,6 +11,7 @@ import {ACCENT_BLUE, ACCENT_GREEN, ACCENT_MAP, ACCENT_PURPLE, ACCENT_RED, ACCENT
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
 import {setTheme} from '../../reducers/theme.js';
 import {persistTheme} from '../../lib/themes/themePersistance.js';
+import {disableActiveCustomAccent} from '../../lib/themes/uli-custom-themes.js';
 import rainbowIcon from './tw-accent-rainbow.svg';
 import styles from './settings-menu.css';
 
@@ -149,6 +150,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
     onChangeTheme: theme => {
+        disableActiveCustomAccent();
         dispatch(setTheme(theme));
         dispatch(closeSettingsMenu());
         persistTheme(theme);

@@ -23,6 +23,7 @@ const StopAllComponent = function (props) {
                 }
             )}
             draggable={false}
+            data-uli-icon="stop-all"
             src={stopAllIcon}
             title={title}
             onClick={onClick}

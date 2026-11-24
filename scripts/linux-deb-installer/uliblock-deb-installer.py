@@ -113,29 +113,50 @@ def resolve_deb_release(preferred_tag=None):
         except Exception as exc:
             last_err = exc
 
-    # Direct URL fallback if API is rate-limited
-    ver = DEFAULT_VERSION.lstrip("v")
-    tag = f"v{ver}"
-    for alias in arch_aliases:
-        candidate_name = f"UliBlock-linux-{alias}-{ver}.deb"
-        candidate_url = f"https://github.com/{REPO}/releases/download/{tag}/{candidate_name}"
+    # Direct URL fallback via /releases/latest redirect (zero GitHub API rate limit!)
+    candidate_tags = []
+    if preferred_tag:
+        candidate_tags.append(preferred_tag if preferred_tag.startswith("v") else f"v{preferred_tag}")
+    else:
         try:
             req = urllib.request.Request(
-                candidate_url,
+                f"https://github.com/{REPO}/releases/latest",
                 method="HEAD",
-                headers={"User-Agent": f"UliBlock-Deb-Installer/{ver}"},
+                headers={"User-Agent": f"UliBlock-Deb-Installer/{DEFAULT_VERSION}"},
             )
             with urllib.request.urlopen(req, timeout=15) as resp:
-                size = int(resp.headers.get("Content-Length") or 0)
-                return {
-                    "tag": tag,
-                    "name": candidate_name,
-                    "url": candidate_url,
-                    "size": size,
-                    "release_url": f"https://github.com/{REPO}/releases/tag/{tag}",
-                }
+                final_url = resp.geturl()
+                m = re.search(r"/releases/tag/([^/?#]+)", final_url)
+                if m:
+                    candidate_tags.append(m.group(1))
         except Exception as exc:
             last_err = exc
+    default_tag = f"v{DEFAULT_VERSION.lstrip('v')}"
+    if default_tag not in candidate_tags:
+        candidate_tags.append(default_tag)
+
+    for tag in candidate_tags:
+        ver = tag.lstrip("v")
+        for alias in arch_aliases:
+            candidate_name = f"UliBlock-linux-{alias}-{ver}.deb"
+            candidate_url = f"https://github.com/{REPO}/releases/download/{tag}/{candidate_name}"
+            try:
+                req = urllib.request.Request(
+                    candidate_url,
+                    method="HEAD",
+                    headers={"User-Agent": f"UliBlock-Deb-Installer/{ver}"},
+                )
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    size = int(resp.headers.get("Content-Length") or 0)
+                    return {
+                        "tag": tag,
+                        "name": candidate_name,
+                        "url": candidate_url,
+                        "size": size,
+                        "release_url": f"https://github.com/{REPO}/releases/tag/{tag}",
+                    }
+            except Exception as exc:
+                last_err = exc
 
     raise RuntimeError(
         f"Не удалось найти .deb пакет UliBlock для архитектуры {deb_arch} в репозитории {REPO}.\n"
@@ -271,7 +292,24 @@ def format_mb(num_bytes):
     return f"{num_bytes / (1024 * 1024):.1f} МБ"
 
 
-def run_gtk_gui(preferred_tag=None):
+def wait_for_pid_exit(pid, timeout=6.0):
+    """Waits briefly for a parent UliBlock process to exit before installing."""
+    if not pid or pid <= 0:
+        return
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return
+        except PermissionError:
+            return
+        except Exception:
+            return
+        time.sleep(0.2)
+
+
+def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
     import gi
 
     gi.require_version("Gtk", "3.0")
@@ -301,16 +339,49 @@ def run_gtk_gui(preferred_tag=None):
         border-radius: 10px;
         padding: 14px 16px;
     }
+    button.uli-primary,
     .uli-primary {
         background-image: none;
         background-color: #22a630;
+        border: 1px solid #177421;
         color: #ffffff;
         font-weight: 700;
         padding: 8px 18px;
         border-radius: 8px;
+        text-shadow: none;
+        box-shadow: none;
     }
+    button.uli-primary label,
+    .uli-primary label,
+    button.uli-primary:hover label,
+    button.uli-primary:active label,
+    button.uli-primary:focus label {
+        color: #ffffff;
+        text-shadow: none;
+    }
+    button.uli-primary:hover,
     .uli-primary:hover {
+        background-image: none;
         background-color: #1b8c27;
+        border-color: #14631c;
+        color: #ffffff;
+    }
+    button.uli-primary:active,
+    .uli-primary:active {
+        background-image: none;
+        background-color: #177421;
+        color: #ffffff;
+    }
+    button.uli-primary:disabled,
+    .uli-primary:disabled {
+        background-image: none;
+        background-color: #7cc984;
+        border-color: #6ab972;
+        color: #f3fff4;
+    }
+    button.uli-primary:disabled label,
+    .uli-primary:disabled label {
+        color: #f3fff4;
     }
     .uli-log {
         font-family: monospace;
@@ -322,7 +393,7 @@ def run_gtk_gui(preferred_tag=None):
     Gtk.StyleContext.add_provider_for_screen(
         Gdk.Screen.get_default(),
         provider,
-        Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        Gtk.STYLE_PROVIDER_PRIORITY_USER,
     )
 
     class InstallerWindow(Gtk.Window):
@@ -460,14 +531,26 @@ def run_gtk_gui(preferred_tag=None):
 
                 def _ready():
                     self.info_label.set_markup("\n".join(lines))
-                    self.status_label.set_text(
-                        "Нажмите кнопку ниже, чтобы скачать .deb пакет и установить UliBlock в систему."
-                    )
-                    self.progress.set_text("Готово к установке")
-                    self.action_btn.set_label(
-                        "Обновить / переустановить" if installed else "Установить UliBlock"
-                    )
-                    self.action_btn.set_sensitive(True)
+                    target_ver = info["tag"].lstrip("v")
+                    if installed and installed != target_ver:
+                        btn_text = f"Обновить до {info['tag']}"
+                    elif installed:
+                        btn_text = f"Переустановить {info['tag']}"
+                    else:
+                        btn_text = "Установить UliBlock"
+                    self.action_btn.set_label(btn_text)
+                    if auto_install:
+                        self.status_label.set_text(
+                            f"Автообновление до UliBlock {info['tag']} — начинается загрузка..."
+                        )
+                        self.progress.set_text("Запуск автообновления...")
+                        self.start_install()
+                    else:
+                        self.status_label.set_text(
+                            "Нажмите кнопку ниже, чтобы скачать .deb пакет и установить UliBlock в систему."
+                        )
+                        self.progress.set_text("Готово к установке")
+                        self.action_btn.set_sensitive(True)
                     return False
 
                 GLib.idle_add(_ready)
@@ -484,6 +567,15 @@ def run_gtk_gui(preferred_tag=None):
 
                 GLib.idle_add(_err)
 
+        def start_install(self):
+            if self.busy or self.release_info is None:
+                return
+            self.busy = True
+            self.cancel_event.clear()
+            self.action_btn.set_sensitive(False)
+            self.cancel_btn.set_label("Отмена")
+            threading.Thread(target=self.run_install_worker, daemon=True).start()
+
         def on_action_clicked(self, _button):
             if self.installed_ok:
                 launch_uliblock()
@@ -494,14 +586,7 @@ def run_gtk_gui(preferred_tag=None):
                 self.status_label.set_text("Повторный поиск релиза...")
                 threading.Thread(target=self.load_release_info, daemon=True).start()
                 return
-            if self.busy:
-                return
-
-            self.busy = True
-            self.cancel_event.clear()
-            self.action_btn.set_sensitive(False)
-            self.cancel_btn.set_label("Отмена")
-            threading.Thread(target=self.run_install_worker, daemon=True).start()
+            self.start_install()
 
         def run_install_worker(self):
             info = self.release_info
@@ -538,6 +623,9 @@ def run_gtk_gui(preferred_tag=None):
 
                 self.append_log(f"Пакет загружен: {deb_path}")
 
+                if wait_pid:
+                    wait_for_pid_exit(wait_pid)
+
                 def _start_install_ui():
                     nonlocal pulse_id
                     self.status_label.set_text(
@@ -567,6 +655,16 @@ def run_gtk_gui(preferred_tag=None):
                     self.action_btn.set_sensitive(True)
                     self.cancel_btn.set_label("Закрыть")
                     self.cancel_btn.set_sensitive(True)
+                    if auto_install:
+                        self.status_label.set_markup(
+                            f"<b>UliBlock {GLib.markup_escape_text(info['tag'])} успешно обновлён!</b>\n"
+                            "Запуск обновлённого редактора..."
+                        )
+                        def _auto_launch():
+                            launch_uliblock()
+                            self.close()
+                            return False
+                        GLib.timeout_add(900, _auto_launch)
                     return False
 
                 GLib.idle_add(_done)
@@ -619,7 +717,7 @@ def run_gtk_gui(preferred_tag=None):
     Gtk.main()
 
 
-def run_cli_or_zenity(preferred_tag=None):
+def run_cli_or_zenity(preferred_tag=None, auto_install=False, wait_pid=None):
     has_gui = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
     use_zenity = has_gui and bool(shutil.which("zenity"))
 
@@ -637,7 +735,7 @@ def run_cli_or_zenity(preferred_tag=None):
         notify_error(str(exc))
         sys.exit(1)
 
-    if use_zenity:
+    if use_zenity and not auto_install:
         ans = subprocess.run(
             [
                 "zenity",
@@ -706,12 +804,17 @@ def run_cli_or_zenity(preferred_tag=None):
             download_deb(info["url"], deb_path, info["size"], progress_cb=cprog)
             print()
 
+        if wait_pid:
+            wait_for_pid_exit(wait_pid)
+
         print("Установка .deb пакета (может потребоваться пароль администратора)...")
         install_deb_package(deb_path, log_cb=print)
 
         msg = f"UliBlock {info['tag']} успешно установлен!"
         print(msg)
-        if use_zenity:
+        if auto_install:
+            launch_uliblock()
+        elif use_zenity:
             res = subprocess.run(
                 [
                     "zenity",
@@ -737,6 +840,8 @@ def main():
     args = sys.argv[1:]
     preferred_tag = None
     force_cli = False
+    auto_install = False
+    wait_pid = None
 
     i = 0
     while i < len(args):
@@ -747,20 +852,28 @@ def main():
             return
         if arg == "--cli":
             force_cli = True
+        elif arg in ("--auto", "--auto-update"):
+            auto_install = True
         elif arg == "--tag" and i + 1 < len(args):
             i += 1
             preferred_tag = args[i]
+        elif arg == "--wait-pid" and i + 1 < len(args):
+            i += 1
+            try:
+                wait_pid = int(args[i])
+            except ValueError:
+                wait_pid = None
         i += 1
 
     has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
     if has_display and not force_cli:
         try:
-            run_gtk_gui(preferred_tag=preferred_tag)
+            run_gtk_gui(preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid)
             return
         except Exception as exc:
             print(f"GTK3 недоступен ({exc}), переключение на zenity/CLI...", file=sys.stderr)
 
-    run_cli_or_zenity(preferred_tag=preferred_tag)
+    run_cli_or_zenity(preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid)
 
 
 if __name__ == "__main__":

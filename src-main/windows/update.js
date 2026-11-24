@@ -1,13 +1,19 @@
 const AbstractWindow = require('./abstract');
-const {translate, getLocale, getStrings} = require('../l10n');
+const {getLocale, getStrings} = require('../l10n');
 const {APP_NAME} = require('../brand');
 const openExternal = require('../open-external');
+const {startSelfUpdate} = require('../auto-updater');
+
+let openUpdateWindow = null;
 
 class UpdateWindow extends AbstractWindow {
-  constructor (currentVersion, latestVersion, security) {
+  constructor ({currentVersion, latestVersion, tag, releaseUrl, releaseNotes}) {
     super();
 
-    this.window.setTitle(`${translate('update.window-title')} - ${APP_NAME}`);
+    openUpdateWindow = this;
+    this.isUpdating = false;
+
+    this.window.setTitle(`Обновление ${APP_NAME}`);
 
     this.ipc.on('get-strings', (event) => {
       event.returnValue = {
@@ -21,48 +27,72 @@ class UpdateWindow extends AbstractWindow {
       event.returnValue = {
         currentVersion,
         latestVersion,
-        security
+        tag: tag || `v${latestVersion}`,
+        releaseUrl: releaseUrl || `https://github.com/123asxcqasdc/uliblock/releases/tag/v${latestVersion}`,
+        releaseNotes: releaseNotes || '',
+        platform: process.platform
       };
     });
 
-    this.ipc.handle('download', () => {
-      this.window.destroy();
+    this.ipc.handle('start-update', async () => {
+      if (this.isUpdating) {
+        return {ok: true};
+      }
+      this.isUpdating = true;
 
-      const params = new URLSearchParams();
-      params.set('from', currentVersion);
-      params.set('to', latestVersion);
-      openExternal(`https://desktop.turbowarp.org/update_available?${params}`);
+      const sendProgress = (payload) => {
+        if (!this.window.isDestroyed()) {
+          this.window.webContents.send('update-progress', payload);
+        }
+      };
+
+      try {
+        await startSelfUpdate({
+          version: latestVersion,
+          tag: tag || `v${latestVersion}`,
+          onStatus: (status) => {
+            sendProgress({status});
+          },
+          onProgress: (progress) => {
+            sendProgress(progress);
+          }
+        });
+        return {ok: true};
+      } catch (err) {
+        this.isUpdating = false;
+        const message = err && err.message ? err.message : String(err);
+        sendProgress({error: message});
+        return {ok: false, error: message};
+      }
+    });
+
+    this.ipc.handle('open-release-page', () => {
+      openExternal(releaseUrl || `https://github.com/123asxcqasdc/uliblock/releases/tag/v${latestVersion}`);
     });
 
     const ignore = (permanently) => {
-      const SECOND = 1000;
-      const MINUTE = SECOND * 60;
-      const HOUR = MINUTE * 60;
-
-      let until;
-      if (security) {
-        // Security updates can't be ignored.
-        until = new Date(0);
-      } else if (permanently) {
-        // 3000 ought to be enough years into the future...
-        until = new Date(3000, 0, 0);
-      } else {
-        until = new Date();
-        until.setTime(until.getTime() + (HOUR * 6));
+      if (!permanently) {
+        // User clicked "Later" or closed the window: check again on next launch.
+        return;
       }
-
-      // Imported late due to circular dependency
+      // 3000 ought to be enough years into the future...
+      const until = new Date(3000, 0, 0);
       const {ignoreUpdate} = require('../update-checker');
       ignoreUpdate(latestVersion, until);
     };
 
     this.ipc.handle('ignore', (event, permanently) => {
+      if (this.isUpdating) {
+        return;
+      }
+      ignore(Boolean(permanently));
       this.window.destroy();
-      ignore(permanently);
     });
 
-    this.window.on('close', () => {
-      ignore(false);
+    this.window.on('closed', () => {
+      if (openUpdateWindow === this) {
+        openUpdateWindow = null;
+      }
     });
 
     this.window.webContents.on('did-finish-load', () => {
@@ -74,8 +104,8 @@ class UpdateWindow extends AbstractWindow {
 
   getDimensions () {
     return {
-      width: 600,
-      height: 500
+      width: 560,
+      height: 480
     };
   }
 
@@ -87,8 +117,16 @@ class UpdateWindow extends AbstractWindow {
     return true;
   }
 
-  static updateAvailable (currentVersion, latestVersion, isSecurity) {
-    new UpdateWindow(currentVersion, latestVersion, isSecurity);
+  static isOpen () {
+    return Boolean(openUpdateWindow && !openUpdateWindow.window.isDestroyed());
+  }
+
+  static updateAvailable (details) {
+    if (UpdateWindow.isOpen()) {
+      openUpdateWindow.window.focus();
+      return;
+    }
+    new UpdateWindow(details);
   }
 }
 

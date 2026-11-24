@@ -1,226 +1,304 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         padding: 0;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        color: black;
-        background-color: white;
-      }
-      main {
-        padding: 20px;
-        box-sizing: border-box;
-        width: 100vw;
+        font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+        color: #1c2420;
+        background-color: #f6faf6;
         height: 100vh;
-        border: 20px solid hsla(0, 100%, 65%, 1);
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
       }
 
-      h1, h2, p {
+      .header {
+        background: linear-gradient(135deg, #22a630 0%, #177421 100%);
+        color: #ffffff;
+        padding: 18px 22px;
+      }
+      .header h1 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        font-weight: 800;
+      }
+      .header p {
         margin: 0;
-      }
-      ul {
-        margin: 0.5rem 0;
+        font-size: 13.5px;
+        opacity: 0.94;
       }
 
-      .update-log {
-        width: 100%;
-        flex-grow: 1;
-        border: 0;
-        overflow: auto;
+      .content {
+        padding: 16px 22px 18px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
       }
-      .loading, .error, .empty {
+
+      .version-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px solid #cce7cf;
+        border-radius: 10px;
+        padding: 9px 13px;
+        font-size: 13.5px;
+      }
+      .version-badge {
+        background: #e9f8eb;
+        color: #177421;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 6px;
+      }
+      .version-badge.new {
+        background: #22a630;
+        color: #ffffff;
+      }
+
+      .notes-box {
+        flex: 1;
+        min-height: 100px;
+        background: #ffffff;
+        border: 1px solid #d4e8d6;
+        border-radius: 10px;
+        padding: 12px 14px;
+        overflow-y: auto;
+        font-size: 13.5px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        color: #29382d;
+      }
+
+      .progress-wrap {
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        background: #ffffff;
+        border: 1px solid #cce7cf;
+        border-radius: 10px;
+        padding: 11px 14px;
+      }
+      .progress-wrap.visible {
+        display: flex;
+      }
+      .progress-status {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1c2420;
+      }
+      .progress-bar-track {
         width: 100%;
+        height: 10px;
+        background: #e4efe5;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
         height: 100%;
+        width: 0%;
+        background: #22a630;
+        transition: width 0.15s ease;
+      }
+
+      .error-box {
+        display: none;
+        background: #fff1f1;
+        border: 1px solid #f0b4b4;
+        color: #8c1d1d;
+        border-radius: 9px;
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+      .error-box.visible {
+        display: block;
+      }
+
+      .footer-row {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
       }
+
+      .skip-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #4f5f56;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
       button {
         cursor: pointer;
         font: inherit;
-        color: inherit;
-        padding: 0.5rem;
-        border-radius: 0.25rem;
-        border: 1px solid hsla(0, 0%, 0%, 0.15);
-        font-weight: bold;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 9px 16px;
+        border-radius: 8px;
+        border: 1px solid #c9d9cb;
+        background: #ffffff;
+        color: #1c2420;
       }
-      .download-button {
-        color: black;
-        background-color: #24cd11;
+      button:hover:not(:disabled) {
+        background: #eef6ef;
       }
-      .ignore-button {
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
 
+      .btn-primary {
+        background: #22a630;
+        border-color: #177421;
+        color: #ffffff;
       }
-      label {
+      .btn-primary:hover:not(:disabled) {
+        background: #1b8c27;
+      }
+
+      .release-link {
+        font-size: 12.5px;
+        color: #177421;
+        text-decoration: underline;
         cursor: pointer;
-      }
-
-      .if-security {
-        display: none;
-      }
-      .security .if-security {
-        display: initial;
-      }
-      .security .if-normal {
-        display: none;
+        background: none;
+        border: 0;
+        padding: 0;
+        font-weight: 600;
       }
     </style>
   </head>
   <body>
-    <main>
-      <script>
-        const {appName, locale, strings} = UpdatePreload.getStrings();
-        document.documentElement.lang = locale;
+    <div class="header">
+      <h1 id="title">Доступно обновление UliBlock</h1>
+      <p id="subtitle">Редактор закроется и автоматически запустит установщик новой версии.</p>
+    </div>
 
-        const info = UpdatePreload.getInfo();
-        if (info.security) {
-          document.body.classList.add('security');
-        }
-      </script>
-
-      <h1 class="normal-title if-normal"></h1>
-      <h1 class="security-title if-security"></h1>
-      <script>
-        document.querySelector('.normal-title').textContent = strings['update.normal-title'];
-        document.querySelector('.security-title').textContent = strings['update.security-title'];
-      </script>
-
-      <p class="normal-description if-normal"></p>
-      <p class="security-description if-security"></p>
-      <script>
-        const appNameVersion = `${appName} v${info.latestVersion}`;
-        document.querySelector('.normal-description').textContent = strings['update.normal-description'].replace('{appNameVersion}', appNameVersion);
-        document.querySelector('.security-description').textContent = strings['update.security-description'].replace('{appNameVersion}', appNameVersion);;
-      </script>
-
-      <div class="update-log">
-        <p class="loading"></p>
+    <div class="content">
+      <div class="version-pill">
+        <span>Текущая:</span>
+        <span class="version-badge" id="cur-ver"></span>
+        <span>→</span>
+        <span>Новая:</span>
+        <span class="version-badge new" id="new-ver"></span>
+        <button type="button" class="release-link" id="open-release" style="margin-left: auto;">GitHub Releases</button>
       </div>
-      <script>
-        document.querySelector('.loading').textContent = strings['update.loading'];
-      </script>
 
-      <button class="download-button"></button>
-      <button class="ignore-button"></button>
-      <script>
-        const downloadButton = document.querySelector('.download-button');
-        const ignoreButton = document.querySelector('.ignore-button');
-        downloadButton.textContent = strings['update.download-button'];
-        ignoreButton.textContent = strings['update.ignore-button'];
-      </script>
+      <div class="notes-box" id="notes"></div>
 
-      <label class="permanently-ignore-outer if-normal">
-        <input type="checkbox" class="permanently-ignore-checkbox">
-        <span class="permanently-ignore-label"></span>
-      </label>
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-status" id="progress-status">Подготовка загрузки...</div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+      </div>
 
-      <script>
-        document.querySelector('.permanently-ignore-label').textContent = strings['update.permanently-ignore'];
+      <div class="error-box" id="error-box"></div>
 
-        const permanentCheckbox = document.querySelector('.permanently-ignore-checkbox');
-        downloadButton.addEventListener('click', () => {
-          UpdatePreload.download();
-        });
-        ignoreButton.addEventListener('click', () => {
-          UpdatePreload.ignore(permanentCheckbox.checked);
-        });
+      <div class="footer-row">
+        <label class="skip-label">
+          <input type="checkbox" id="skip-checkbox">
+          <span>Пропустить эту версию</span>
+        </label>
 
-        const A_IS_NEWER = 1;
-        const B_IS_NEWER = 2;
-        const compareVersions = (a, b) => {
-          const partsA = a.split('-')[0].split('.');
-          const partsB = b.split('-')[0].split('.');
-          const expectedLength = 3;
-          for (var i = 0; i < expectedLength; i++) {
-            const itemA = +partsA[i];
-            const itemB = +partsB[i];
-            if (itemA > itemB) {
-              return A_IS_NEWER;
-            } else if (itemA < itemB) {
-              return B_IS_NEWER;
-            }
+        <div class="actions">
+          <button type="button" id="later-btn">Позже</button>
+          <button type="button" class="btn-primary" id="update-btn">Обновить сейчас</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const {appName} = UpdatePreload.getStrings();
+      const info = UpdatePreload.getInfo();
+
+      document.getElementById('title').textContent = `Доступно обновление ${appName}!`;
+      document.getElementById('cur-ver').textContent = `v${info.currentVersion}`;
+      document.getElementById('new-ver').textContent = info.tag || `v${info.latestVersion}`;
+
+      const notesEl = document.getElementById('notes');
+      if (info.releaseNotes && info.releaseNotes.trim()) {
+        notesEl.textContent = info.releaseNotes.trim();
+      } else {
+        notesEl.textContent = `Вышла новая версия ${appName} ${info.tag || 'v' + info.latestVersion}.\n\nНажмите «Обновить сейчас», чтобы закрыть редактор и автоматически установить обновление (при установке в систему потребуется только ввод пароля администратора).`;
+      }
+
+      const updateBtn = document.getElementById('update-btn');
+      const laterBtn = document.getElementById('later-btn');
+      const skipCheckbox = document.getElementById('skip-checkbox');
+      const progressWrap = document.getElementById('progress-wrap');
+      const progressStatus = document.getElementById('progress-status');
+      const progressFill = document.getElementById('progress-fill');
+      const errorBox = document.getElementById('error-box');
+
+      document.getElementById('open-release').addEventListener('click', () => {
+        UpdatePreload.openReleasePage();
+      });
+
+      laterBtn.addEventListener('click', () => {
+        UpdatePreload.ignore(skipCheckbox.checked);
+      });
+
+      const formatMB = (bytes) => `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+
+      UpdatePreload.onProgress((payload) => {
+        if (payload.error) {
+          errorBox.textContent = `Не удалось запустить автообновление: ${payload.error}`;
+          errorBox.classList.add('visible');
+          updateBtn.disabled = false;
+          laterBtn.disabled = false;
+          updateBtn.textContent = 'Повторить';
+          return;
+        }
+        if (payload.status) {
+          progressStatus.textContent = payload.status;
+        }
+        if (typeof payload.percent === 'number') {
+          progressFill.style.width = `${payload.percent}%`;
+          if (payload.total > 0) {
+            progressStatus.textContent = `Загрузка установщика: ${payload.percent}% (${formatMB(payload.received)} / ${formatMB(payload.total)})`;
           }
+        }
+      });
 
-          const prereleaseA = a.split('-')[1];
-          const prereleaseB = b.split('-')[1];
-          if (prereleaseA === prereleaseB) {
-            return 0;
-          } else if (prereleaseA && !prereleaseB) {
-            return B_IS_NEWER;
-          } else if (prereleaseB && !prereleaseA) {
-            return A_IS_NEWER;
-          } else if (prereleaseA > prereleaseB) {
-            return A_IS_NEWER;
-          } else {
-            return B_IS_NEWER;
-          }
-        };
+      updateBtn.addEventListener('click', async () => {
+        errorBox.classList.remove('visible');
+        progressWrap.classList.add('visible');
+        progressFill.style.width = '0%';
+        progressStatus.textContent = 'Подготовка загрузки установщика...';
+        updateBtn.disabled = true;
+        laterBtn.disabled = true;
+        skipCheckbox.disabled = true;
 
-        const removeChildren = (el) => {
-          while (el.firstChild) {
-            el.removeChild(el.firstChild);
-          }
-        };
-
-        const changelog = document.querySelector('.update-log');
-        fetch(`https://desktop.turbowarp.org/changelog.json?version=${info.latestVersion}`)
-          .then((res) => {
-            if (!res.ok) {
-              throw new Error(`HTTP error ${res.status}`);
-            }
-            return res.json();
-          })
-          .then((allReleases) => {
-            removeChildren(changelog);
-
-            const filteredReleases = allReleases.filter((release) => (
-              // Only show notes that are newer than the current version
-              compareVersions(info.currentVersion, release.version) === B_IS_NEWER &&
-              // Only show notes that are older than the version we're upgrading to
-              compareVersions(info.latestVersion, release.version) !== B_IS_NEWER
-            ));
-
-            if (filteredReleases.length) {
-              changelog.lang = 'en';
-
-              for (const {version, date, notes} of filteredReleases) {
-                const titleElement = document.createElement('h2');
-                titleElement.textContent = `v${version} (${date})`;
-                changelog.appendChild(titleElement);
-
-                const ul = document.createElement('ul');
-                for (const note of notes) {
-                  const li = document.createElement('li');
-                  li.textContent = note;
-                  ul.appendChild(li);
-                }
-                changelog.appendChild(ul);
-              }
-            } else {
-              const p = document.createElement('p');
-              p.className = 'empty';
-              p.textContent = strings['update.not-available'];
-              changelog.appendChild(p);
-            }
-          })
-          .catch((error) => {
-            console.error(error);
-
-            removeChildren(changelog);
-            const p = document.createElement('p');
-            p.className = 'error';
-            p.textContent = strings['update.changelog-error']
-              .replace('{error}', `${error}`);
-            changelog.appendChild(p);
-          });
-      </script>
-    </main>
+        const result = await UpdatePreload.startUpdate();
+        if (result && !result.ok) {
+          errorBox.textContent = `Не удалось запустить автообновление: ${result.error || 'неизвестная ошибка'}`;
+          errorBox.classList.add('visible');
+          updateBtn.disabled = false;
+          laterBtn.disabled = false;
+          skipCheckbox.disabled = false;
+          updateBtn.textContent = 'Повторить';
+        }
+      });
+    </script>
   </body>
 </html>

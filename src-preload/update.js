@@ -3,6 +3,12 @@ const {contextBridge, ipcRenderer} = require('electron');
 contextBridge.exposeInMainWorld('UpdatePreload', {
   getStrings: () => ipcRenderer.sendSync('get-strings'),
   getInfo: () => ipcRenderer.sendSync('get-info'),
-  download: () => ipcRenderer.invoke('download'),
-  ignore: (permanently) => ipcRenderer.invoke('ignore', permanently)
+  startUpdate: () => ipcRenderer.invoke('start-update'),
+  openReleasePage: () => ipcRenderer.invoke('open-release-page'),
+  ignore: (permanently) => ipcRenderer.invoke('ignore', permanently),
+  onProgress: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on('update-progress', listener);
+    return () => ipcRenderer.removeListener('update-progress', listener);
+  }
 });
