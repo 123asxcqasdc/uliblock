@@ -119,6 +119,13 @@
 - `src-renderer/packager/standalone.html`, `scripts/packager.json`: обновлён встроенный упаковщик `Uli Packager`.
 - `scripts/linux-deb-installer/uliblock-deb-installer.py`: добавлена поддержка флага `-autoupdate` (в дополнение к `--auto` / `--auto-update`), передаваемого автообновителем UliBlock.
 
+## v1.2.2 — Перекраска PenguinMod-Paint в цвета темы UliBlock
+
+- `package.json`, `package-lock.json`, `docs/index.html`: версия обновлена до `1.2.2`.
+- `scripts/patch-penguinmod-paint.cjs`, `webpack.config.cjs`:
+  - Все фирменные голубые цвета PenguinMod (`#00c3ff`, `#007da3`, `hsla(194, 100%, 50%, ...)`) в `scratch-paint` (`src/css/colors.css`, `color-picker.css`, `confirmation.css` и 34 `.svg` иконках) автоматически переводятся на зелёный акцент UliBlock (`#22a630` / `#177421`) и CSS-переменные темы (`--paint-looks-secondary`, `--paint-looks-transparent`, `--looks-secondary-dark`).
+  - Редактор костюмов теперь зелёный по умолчанию и поддерживает смену акцентного цвета в настройках и «Редакторе тем».
+
 ---
 
 ## Рекомендации по редкой синхронизации с upstream
