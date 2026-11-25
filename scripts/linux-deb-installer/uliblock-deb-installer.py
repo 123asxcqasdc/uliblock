@@ -852,7 +852,7 @@ def main():
             return
         if arg == "--cli":
             force_cli = True
-        elif arg in ("--auto", "--auto-update"):
+        elif arg in ("-autoupdate", "--autoupdate", "--auto", "--auto-update"):
             auto_install = True
         elif arg == "--tag" and i + 1 < len(args):
             i += 1
