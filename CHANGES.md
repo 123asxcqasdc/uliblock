@@ -113,6 +113,12 @@
 - `packages/scratch-gui/src/lib/default-project/{xy-grid.png,index.js,project-data.js}`:
   - Добавлена координатная сетка `xy-grid` вторым фоном нового проекта по умолчанию (первый белый фон остаётся активным).
 
+## v1.2.1 — Обновление Uli Packager и исправление флага `-autoupdate`
+
+- `package.json`, `package-lock.json`, `docs/index.html`: версия обновлена до `1.2.1`.
+- `src-renderer/packager/standalone.html`, `scripts/packager.json`: обновлён встроенный упаковщик `Uli Packager`.
+- `scripts/linux-deb-installer/uliblock-deb-installer.py`: добавлена поддержка флага `-autoupdate` (в дополнение к `--auto` / `--auto-update`), передаваемого автообновителем UliBlock.
+
 ---
 
 ## Рекомендации по редкой синхронизации с upstream
