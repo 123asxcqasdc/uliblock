@@ -1,7 +1,7 @@
 {
   "name": "uliblock",
   "description": "UliBlock — lightweight Scratch/TurboWarp editor fork with community extension gallery and offline cache.",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "license": "GPL-3.0",
   "author": {
     "name": "UliBlock Contributors (based on TurboWarp Desktop by Thomas Weber)",
@@ -9,7 +9,7 @@
   },
   "type": "commonjs",
   "scripts": {
-    "fetch": "node scripts/download-library-files.mjs && node scripts/download-packager.mjs && node scripts/prepare-extensions.mjs",
+    "fetch": "node scripts/download-library-files.mjs && node scripts/download-packager.mjs && node scripts/prepare-extensions.mjs && node scripts/patch-penguinmod-paint.cjs",
     "webpack:compile": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack",
     "webpack:watch": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --watch",
     "webpack:prod": "cross-env NODE_ENV=production NODE_OPTIONS=--openssl-legacy-provider webpack",

@@ -1,6 +1,9 @@
 const path = require('path');
 const {DefinePlugin} = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const {patchPenguinModPaint} = require('./scripts/patch-penguinmod-paint.cjs');
+
+patchPenguinModPaint(__dirname);
 
 const base = {
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
