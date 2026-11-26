@@ -34,7 +34,7 @@ import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 import TWNews from './tw-news.jsx';
 
-import {openTipsLibrary, openSettingsModal, openRestorePointModal} from '../../reducers/modals';
+import {openTipsLibrary, openSettingsModal, openRestorePointModal, openSb3ExplorerModal} from '../../reducers/modals';
 import {setPlayer} from '../../reducers/mode';
 import {
     isTimeTravel220022BC,
@@ -221,6 +221,7 @@ class MenuBar extends React.Component {
             'handleClickPackager',
             'handleClickDesktopSettings',
             'handleClickRestorePoints',
+            'handleClickSb3Explorer',
             'handleClickSeeCommunity',
             'handleClickShare',
             'handleSetMode',
@@ -277,6 +278,10 @@ class MenuBar extends React.Component {
     }
     handleClickRestorePoints () {
         this.props.onClickRestorePoints();
+        this.props.onRequestCloseFile();
+    }
+    handleClickSb3Explorer () {
+        this.props.onClickSb3Explorer();
         this.props.onRequestCloseFile();
     }
     handleClickSeeCommunity (waitForUpdate) {
@@ -706,6 +711,11 @@ class MenuBar extends React.Component {
                                         </MenuSection>
                                     )}
                                     <MenuSection>
+                                        <MenuItem onClick={this.handleClickSb3Explorer}>
+                                            <span>SB3 Explorer...</span>
+                                        </MenuItem>
+                                    </MenuSection>
+                                    <MenuSection>
                                         <MenuItem onClick={this.handleClickRestorePoints}>
                                             <FormattedMessage
                                                 defaultMessage="Restore points"
@@ -1115,6 +1125,7 @@ MenuBar.propTypes = {
     onClickDesktopSettings: PropTypes.func,
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
+    onClickSb3Explorer: PropTypes.func,
     onClickEdit: PropTypes.func,
     onClickFile: PropTypes.func,
     onClickLogin: PropTypes.func,
@@ -1215,6 +1226,7 @@ const mapDispatchToProps = dispatch => ({
     onRequestOpenAbout: () => dispatch(openAboutMenu()),
     onRequestCloseAbout: () => dispatch(closeAboutMenu()),
     onClickRestorePoints: () => dispatch(openRestorePointModal()),
+    onClickSb3Explorer: () => dispatch(openSb3ExplorerModal()),
     onClickSettings: () => dispatch(openSettingsMenu()),
     onClickSettingsModal: () => {
         dispatch(closeEditMenu());

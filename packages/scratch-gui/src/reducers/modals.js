@@ -19,6 +19,7 @@ const MODAL_FONTS = 'fontsModal';
 const MODAL_UNKNOWN_PLATFORM = 'unknownPlatformModal';
 const MODAL_INVALID_PROJECT = 'invalidProjectModal';
 const MODAL_THEME_EDITOR = 'themeEditorModal';
+const MODAL_SB3_EXPLORER = 'sb3ExplorerModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -38,7 +39,8 @@ const initialState = {
     [MODAL_FONTS]: false,
     [MODAL_UNKNOWN_PLATFORM]: false,
     [MODAL_INVALID_PROJECT]: false,
-    [MODAL_THEME_EDITOR]: false
+    [MODAL_THEME_EDITOR]: false,
+    [MODAL_SB3_EXPLORER]: false
 };
 
 const reducer = function (state, action) {
@@ -122,6 +124,9 @@ const openInvalidProjectModal = function () {
 const openThemeEditorModal = function () {
     return openModal(MODAL_THEME_EDITOR);
 };
+const openSb3ExplorerModal = function () {
+    return openModal(MODAL_SB3_EXPLORER);
+};
 const closeBackdropLibrary = function () {
     return closeModal(MODAL_BACKDROP_LIBRARY);
 };
@@ -176,6 +181,9 @@ const closeInvalidProjectModal = function () {
 const closeThemeEditorModal = function () {
     return closeModal(MODAL_THEME_EDITOR);
 };
+const closeSb3ExplorerModal = function () {
+    return closeModal(MODAL_SB3_EXPLORER);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -197,6 +205,7 @@ export {
     openUnknownPlatformModal,
     openInvalidProjectModal,
     openThemeEditorModal,
+    openSb3ExplorerModal,
     closeBackdropLibrary,
     closeCostumeLibrary,
     closeExtensionLibrary,
@@ -214,5 +223,6 @@ export {
     closeFontsModal,
     closeUnknownPlatformModal,
     closeInvalidProjectModal,
-    closeThemeEditorModal
+    closeThemeEditorModal,
+    closeSb3ExplorerModal
 };

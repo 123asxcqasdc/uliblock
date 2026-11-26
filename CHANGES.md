@@ -119,6 +119,18 @@
 - `src-renderer/packager/standalone.html`, `scripts/packager.json`: обновлён встроенный упаковщик `Uli Packager`.
 - `scripts/linux-deb-installer/uliblock-deb-installer.py`: добавлена поддержка флага `-autoupdate` (в дополнение к `--auto` / `--auto-update`), передаваемого автообновителем UliBlock.
 
+## v1.2.2 — Зелёная тема редактора костюмов PenguinMod-Paint
+
+- `scripts/patch-penguinmod-paint.cjs`, `webpack.config.cjs`, `package.json`: при сборке `PenguinMod-Paint` автоматически заменяет фирменные голубые цвета и 34 SVG-иконки инструментов на зелёную палитру UliBlock (`#22a630` / `#177421`) и подключает CSS-переменные активной темы.
+
+## v1.3.0 — Windows MSI-установщик и SB3 Explorer
+
+- `package.json`, `release-automation/{build.mjs,patch-electron-builder.cjs}`, `.github/workflows/release.yml`, `src-main/auto-updater.js`:
+  - Добавлена сборка Windows `.msi` (`oneClick: true`, `perMachine: true` со строгим `ALLUSERS=1` через патч `MsiTarget.prototype.writeManifest`) со стандартным прогресс-баром Windows Installer и без лишних диалогов; NSIS `.exe` сохранён в релизных артефактах для совместимости автообновления с `v1.2.x`.
+  - Автообновитель на Windows скачивает `.msi`, запускает `msiexec.exe /i ... /passive` и перезапускает установленный `UliBlock.exe`.
+- `packages/scratch-gui/src/{lib/uli-sb3-explorer.js,containers/uli-sb3-explorer-modal.jsx,components/uli-sb3-explorer/*,components/menu-bar/menu-bar.jsx,reducers/modals.js,containers/gui.jsx,components/gui/gui.jsx}`:
+  - Добавлен **SB3 Explorer** в меню «Файл» — виртуальный файловый проводник по содержимому проекта (например, `/snail/res/costumes/happy.svg`), предпросмотр картинок/звуков/JSON/кода расширений и выборочный экспорт (отмеченные элементы, только костюмы/фоны, только звуки, отдельные спрайты `.sprite3`, только расширения, всё дерево в ZIP).
+
 ## v1.2.2 — Перекраска PenguinMod-Paint в цвета темы UliBlock
 
 - `package.json`, `package-lock.json`, `docs/index.html`: версия обновлена до `1.2.2`.
