@@ -244,16 +244,16 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
   }
 
   if (process.platform === 'win32') {
-    const installerName = `UliBlock-Setup-${cleanVersion}-x64.exe`;
+    const installerName = `UliBlock-Setup-${cleanVersion}-x64.msi`;
     const installerUrl = `${baseUrl}/${installerName}`;
     const installerPath = path.join(updateDir, installerName);
 
     if (onStatus) onStatus(`Загрузка установщика ${installerName}...`);
     await downloadFileWithProgress(installerUrl, installerPath, onProgress);
 
-    if (onStatus) onStatus('Запуск установщика в автоматическом режиме...');
-    // Helper cmd script waits for Electron PID to exit, runs NSIS installer silently (/S),
-    // and relaunches UliBlock once installation finishes.
+    if (onStatus) onStatus('Запуск MSI-установщика...');
+    // Helper cmd script waits for Electron PID to exit, runs MSI installer with standard
+    // progress bar only (/passive, ALLUSERS=1 per-machine), and relaunches UliBlock.
     const helperCmd = path.join(updateDir, 'run-autoupdate.cmd');
     const exePath = process.execPath;
     const batLines = [
@@ -265,8 +265,12 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
       '  timeout /t 1 /nobreak >NUL',
       '  goto waitloop',
       ')',
-      `start "" /wait "${installerPath}" /S`,
-      `if exist "${exePath}" start "" "${exePath}"`,
+      `start "" /wait msiexec.exe /i "${installerPath}" /passive`,
+      'if exist "%ProgramFiles%\\UliBlock\\UliBlock.exe" (',
+      '  start "" "%ProgramFiles%\\UliBlock\\UliBlock.exe"',
+      `) else if exist "${exePath}" (`,
+      `  start "" "${exePath}"`,
+      ')',
       'del /f /q "%~f0" >NUL 2>&1'
     ].join('\r\n') + '\r\n';
     fs.writeFileSync(helperCmd, batLines, 'utf-8');

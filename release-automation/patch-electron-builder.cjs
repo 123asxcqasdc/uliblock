@@ -24,3 +24,15 @@ LinuxTargetHelper.prototype.computeMimeTypeFiles = async function (...args) {
 
     return tempFile;
 };
+
+// Ensure per-machine MSI installs strictly for all users (do not set MSIINSTALLPERUSER=1 when ALLUSERS=1)
+const MsiTarget = require('app-builder-lib/out/targets/MsiTarget.js').default;
+const origWriteManifest = MsiTarget.prototype.writeManifest;
+MsiTarget.prototype.writeManifest = async function (appOutDir, wixArch, commonOptions) {
+    let manifest = await origWriteManifest.call(this, appOutDir, wixArch, commonOptions);
+    if (commonOptions && commonOptions.isPerMachine) {
+        manifest = manifest.replace(/\s*<Property Id="MSIINSTALLPERUSER"[^>]*\/>/g, '');
+        console.log(`${packageJSON.name}: MsiTarget.prototype.writeManifest patched for strict per-machine (ALLUSERS=1) MSI.`);
+    }
+    return manifest;
+};

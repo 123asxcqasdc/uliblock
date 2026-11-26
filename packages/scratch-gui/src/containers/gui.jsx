@@ -189,6 +189,7 @@ const mapStateToProps = state => {
         unknownPlatformModalVisible: state.scratchGui.modals.unknownPlatformModal,
         invalidProjectModalVisible: state.scratchGui.modals.invalidProjectModal,
         themeEditorModalVisible: state.scratchGui.modals.themeEditorModal,
+        sb3ExplorerModalVisible: state.scratchGui.modals.sb3ExplorerModal,
         vm: state.scratchGui.vm
     };
 };

@@ -175,10 +175,16 @@ const build = async ({
   }
 };
 
-const buildWindows = () => build({
-  platformName: 'WINDOWS',
-  platformType: 'nsis'
-});
+const buildWindows = async () => {
+  await build({
+    platformName: 'WINDOWS',
+    platformType: 'msi'
+  });
+  await build({
+    platformName: 'WINDOWS',
+    platformType: 'nsis'
+  });
+};
 
 const buildWindowsDir = () => build({
   platformName: 'WINDOWS',

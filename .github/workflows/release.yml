@@ -123,7 +123,7 @@ jobs:
     - name: Compile
       working-directory: D:\repo
       run: npm run webpack:prod
-    - name: Package (NSIS x64)
+    - name: Package (MSI + NSIS x64)
       working-directory: D:\repo
       run: |
         node release-automation/build.mjs --windows --x64 --production
@@ -135,6 +135,7 @@ jobs:
       with:
         name: uliblock-windows
         path: |
+          D:\repo\dist\*.msi
           D:\repo\dist\*.exe
     - name: Upload artifacts to GitHub Release
       working-directory: D:\repo
@@ -144,7 +145,7 @@ jobs:
       shell: bash
       run: |
         shopt -s nullglob
-        files=(dist/*.exe)
+        files=(dist/*.msi dist/*.exe)
         if [ ${#files[@]} -eq 0 ]; then
           echo "No Windows artifacts found in dist/" >&2
           exit 1
