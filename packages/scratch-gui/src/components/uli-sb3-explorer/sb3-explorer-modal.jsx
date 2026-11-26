@@ -5,10 +5,11 @@ import Modal from '../../containers/modal.jsx';
 import {formatBytes} from '../../lib/uli-sb3-explorer';
 import styles from './sb3-explorer-modal.css';
 
-const getNodeIcon = node => {
+const getNodeIcon = (node, isExpanded) => {
     if (!node) return '📄';
     if (node.type === 'dir') {
         if (node.isTargetDir) return node.isStage ? '🎭' : '🐌';
+        if (node.isTwFolder) return isExpanded ? '📂' : '📁';
         return '📁';
     }
     if (node.kind === 'costume') return '🖼️';
@@ -20,26 +21,89 @@ const getNodeIcon = node => {
     return '📄';
 };
 
-const renderTreeNodes = (nodesByPath, dirPath, depth, currentPath, onNavigate) => {
+const sortDirsForTree = dirs => dirs.slice().sort((a, b) => {
+    // Keep Stage first, TurboWarp sprite folders next, sprites next, extensions/fonts last
+    const rank = node => {
+        if (node.isStage) return 0;
+        if (node.isTwSpriteFolder) return 1;
+        if (node.isTargetDir) return 2;
+        if (node.path === '/extensions') return 4;
+        if (node.path === '/fonts') return 5;
+        return 3;
+    };
+    const ra = rank(a);
+    const rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name);
+});
+
+const renderTreeNodes = (
+    nodesByPath,
+    dirPath,
+    depth,
+    currentPath,
+    collapsedPaths,
+    onNavigate,
+    onToggleCollapse
+) => {
     const dir = nodesByPath[dirPath];
     if (!dir || dir.type !== 'dir') return null;
 
-    const childDirs = (dir.children || []).filter(c => c.type === 'dir');
+    const childDirs = sortDirsForTree((dir.children || []).filter(c => c.type === 'dir'));
+    const hasSubdirs = childDirs.length > 0;
+    const isCollapsed = collapsedPaths.indexOf(dir.path) !== -1;
+    const isExpanded = !isCollapsed;
+
     return (
         <React.Fragment key={dirPath}>
-            <button
-                type="button"
-                className={classNames(styles.treeRow, {
-                    [styles.treeRowActive]: currentPath === dir.path
+            <div
+                className={classNames(styles.treeItemWrap, {
+                    [styles.treeItemActive]: currentPath === dir.path
                 })}
-                style={{paddingLeft: `${8 + (depth * 14)}px`}}
-                title={dir.path}
-                onClick={() => onNavigate(dir.path)}
+                style={{paddingLeft: `${4 + (depth * 13)}px`}}
             >
-                <span>{getNodeIcon(dir)}</span>
-                <span>{dir.path === '/' ? `/ (${dir.name})` : dir.name}</span>
-            </button>
-            {childDirs.map(child => renderTreeNodes(nodesByPath, child.path, depth + 1, currentPath, onNavigate))}
+                {hasSubdirs ? (
+                    <button
+                        type="button"
+                        className={styles.treeToggleBtn}
+                        title={isCollapsed ? 'Развернуть папку' : 'Свернуть папку'}
+                        aria-expanded={!isCollapsed}
+                        onClick={e => {
+                            e.stopPropagation();
+                            onToggleCollapse(dir.path);
+                        }}
+                    >
+                        {isCollapsed ? '▸' : '▾'}
+                    </button>
+                ) : (
+                    <span className={styles.treeToggleSpacer} />
+                )}
+
+                <button
+                    type="button"
+                    className={styles.treeRow}
+                    title={dir.twFolderLabel ? `${dir.path} (папка TurboWarp: ${dir.twFolderLabel})` : dir.path}
+                    onClick={() => onNavigate(dir.path)}
+                    onDoubleClick={() => {
+                        if (hasSubdirs) onToggleCollapse(dir.path);
+                    }}
+                >
+                    <span>{getNodeIcon(dir, isExpanded && hasSubdirs)}</span>
+                    <span className={styles.treeLabel}>
+                        {dir.path === '/' ? `/ (${dir.name})` : dir.name}
+                    </span>
+                </button>
+            </div>
+
+            {hasSubdirs && !isCollapsed && childDirs.map(child => renderTreeNodes(
+                nodesByPath,
+                child.path,
+                depth + 1,
+                currentPath,
+                collapsedPaths,
+                onNavigate,
+                onToggleCollapse
+            ))}
         </React.Fragment>
     );
 };
@@ -50,6 +114,7 @@ const Sb3ExplorerModalComponent = props => {
         currentPath,
         selectedItemPath,
         checkedPaths,
+        collapsedPaths,
         searchQuery,
         exportMode,
         spriteExportAsZip,
@@ -62,6 +127,9 @@ const Sb3ExplorerModalComponent = props => {
         onClose,
         onRefresh,
         onNavigate,
+        onToggleCollapse,
+        onExpandAll,
+        onCollapseAll,
         onSelectItem,
         onToggleCheck,
         onCheckAllInFolder,
@@ -82,7 +150,8 @@ const Sb3ExplorerModalComponent = props => {
     const visibleItems = query ?
         Object.values(snapshot.nodesByPath).filter(n => n.path !== '/' && (
             n.name.toLowerCase().includes(query) ||
-            n.path.toLowerCase().includes(query)
+            n.path.toLowerCase().includes(query) ||
+            (n.fullName && n.fullName.toLowerCase().includes(query))
         )) :
         rawChildren;
 
@@ -150,6 +219,9 @@ const Sb3ExplorerModalComponent = props => {
                 <div className={styles.statsBar}>
                     <div className={styles.statsPills}>
                         <span className={styles.statPill}>Спрайтов: {snapshot.stats.spriteCount}</span>
+                        {snapshot.stats.folderCount > 0 && (
+                            <span className={styles.statPill}>Папок TW: {snapshot.stats.folderCount}</span>
+                        )}
                         <span className={styles.statPill}>Костюмов и фонов: {snapshot.stats.costumeCount}</span>
                         <span className={styles.statPill}>Звуков: {snapshot.stats.soundCount}</span>
                         <span className={styles.statPill}>Расширений: {snapshot.stats.extensionCount}</span>
@@ -160,13 +232,39 @@ const Sb3ExplorerModalComponent = props => {
                 </div>
 
                 <div className={styles.explorerGrid}>
-                    {/* Left: Folder Tree */}
+                    {/* Left: Collapsible Folder Tree */}
                     <div className={styles.pane}>
                         <div className={styles.paneHeader}>
                             <span>Структура .sb3</span>
+                            <div className={styles.treeActions}>
+                                <button
+                                    type="button"
+                                    className={classNames(styles.btn, styles.btnSmall)}
+                                    title="Развернуть все папки"
+                                    onClick={onExpandAll}
+                                >
+                                    +
+                                </button>
+                                <button
+                                    type="button"
+                                    className={classNames(styles.btn, styles.btnSmall)}
+                                    title="Свернуть все вложенные папки"
+                                    onClick={onCollapseAll}
+                                >
+                                    −
+                                </button>
+                            </div>
                         </div>
                         <div className={styles.paneScroll}>
-                            {renderTreeNodes(snapshot.nodesByPath, '/', 0, currentPath, onNavigate)}
+                            {renderTreeNodes(
+                                snapshot.nodesByPath,
+                                '/',
+                                0,
+                                currentPath,
+                                collapsedPaths,
+                                onNavigate,
+                                onToggleCollapse
+                            )}
                         </div>
                     </div>
 
@@ -238,7 +336,7 @@ const Sb3ExplorerModalComponent = props => {
                                             onChange={() => onToggleCheck(item.path)}
                                             onClick={e => e.stopPropagation()}
                                         />
-                                        <span className={styles.fileIcon}>{getNodeIcon(item)}</span>
+                                        <span className={styles.fileIcon}>{getNodeIcon(item, true)}</span>
                                         <span className={styles.fileName} title={item.path}>
                                             {query ? item.path : item.name}
                                         </span>
@@ -277,7 +375,7 @@ const Sb3ExplorerModalComponent = props => {
                                 <React.Fragment>
                                     <div>
                                         <div className={styles.previewTitle}>
-                                            {getNodeIcon(selectedNode)} {selectedNode.name}
+                                            {getNodeIcon(selectedNode, true)} {selectedNode.name}
                                         </div>
                                         <div className={styles.previewPath}>{selectedNode.path}</div>
                                     </div>
@@ -306,7 +404,11 @@ const Sb3ExplorerModalComponent = props => {
                                     <div className={styles.metaTable}>
                                         <div className={styles.metaRow}>
                                             <span className={styles.metaKey}>Тип:</span>
-                                            <span>{selectedNode.type === 'dir' ? 'Папка' : (selectedNode.ext || selectedNode.kind)}</span>
+                                            <span>
+                                                {selectedNode.type === 'dir' ?
+                                                    (selectedNode.isTwFolder ? 'Папка TurboWarp' : 'Папка') :
+                                                    (selectedNode.ext || selectedNode.kind)}
+                                            </span>
                                         </div>
                                         {selectedNode.type === 'file' && (
                                             <div className={styles.metaRow}>
@@ -316,6 +418,12 @@ const Sb3ExplorerModalComponent = props => {
                                                         'Формируется при экспорте' :
                                                         formatBytes(selectedNode.size)}
                                                 </span>
+                                            </div>
+                                        )}
+                                        {selectedNode.twFolderLabel && (
+                                            <div className={styles.metaRow}>
+                                                <span className={styles.metaKey}>Папка TW:</span>
+                                                <span>{selectedNode.twFolderLabel}</span>
                                             </div>
                                         )}
                                         {selectedNode.spriteName && (
@@ -413,15 +521,18 @@ const Sb3ExplorerModalComponent = props => {
                         <div className={styles.spriteChecklist}>
                             {nonStageSprites.map(sprite => {
                                 const active = selectedSpriteIds.indexOf(sprite.id) !== -1;
+                                const label = sprite.twFolderLabel ?
+                                    `${sprite.twFolderLabel} / ${sprite.name}.sprite3` :
+                                    `${sprite.name}.sprite3`;
                                 return (
-                                    <label key={sprite.id} className={styles.spritePill}>
+                                    <label key={sprite.id} className={styles.spritePill} title={sprite.fullName}>
                                         <input
                                             type="checkbox"
                                             className={styles.fileCheckbox}
                                             checked={active}
                                             onChange={() => onToggleSpriteId(sprite.id)}
                                         />
-                                        <span>{sprite.name}.sprite3</span>
+                                        <span>{label}</span>
                                     </label>
                                 );
                             })}
@@ -453,7 +564,7 @@ const Sb3ExplorerModalComponent = props => {
                                         checked={spriteExportAsZip}
                                         onChange={onToggleSpriteExportAsZip}
                                     />
-                                    <span>Упаковать выбранные <code>.sprite3</code> в один ZIP (иначе каждый скачается отдельным файлом)</span>
+                                    <span>Упаковать выбранные <code>.sprite3</code> в один ZIP с сохранением папок (иначе каждый скачается отдельным файлом)</span>
                                 </label>
                             )}
                             {exportMode === 'extensions' && (
@@ -463,7 +574,7 @@ const Sb3ExplorerModalComponent = props => {
                             )}
                             {exportMode === 'all' && (
                                 <span>
-                                    Сохраняет всю структуру проводника (<code>project.json</code>, ресурсы, <code>.sprite3</code>, расширения и шрифты) в один ZIP-архив.
+                                    Сохраняет всю структуру проводника (<code>project.json</code>, папки TurboWarp, ресурсы, <code>.sprite3</code>, расширения и шрифты) в один ZIP-архив.
                                 </span>
                             )}
                         </div>
@@ -497,6 +608,7 @@ Sb3ExplorerModalComponent.propTypes = {
     currentPath: PropTypes.string.isRequired,
     selectedItemPath: PropTypes.string,
     checkedPaths: PropTypes.arrayOf(PropTypes.string).isRequired,
+    collapsedPaths: PropTypes.arrayOf(PropTypes.string).isRequired,
     searchQuery: PropTypes.string.isRequired,
     exportMode: PropTypes.string.isRequired,
     spriteExportAsZip: PropTypes.bool.isRequired,
@@ -509,6 +621,9 @@ Sb3ExplorerModalComponent.propTypes = {
     onClose: PropTypes.func.isRequired,
     onRefresh: PropTypes.func.isRequired,
     onNavigate: PropTypes.func.isRequired,
+    onToggleCollapse: PropTypes.func.isRequired,
+    onExpandAll: PropTypes.func.isRequired,
+    onCollapseAll: PropTypes.func.isRequired,
     onSelectItem: PropTypes.func.isRequired,
     onToggleCheck: PropTypes.func.isRequired,
     onCheckAllInFolder: PropTypes.func.isRequired,

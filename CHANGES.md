@@ -131,6 +131,12 @@
 - `packages/scratch-gui/src/{lib/uli-sb3-explorer.js,containers/uli-sb3-explorer-modal.jsx,components/uli-sb3-explorer/*,components/menu-bar/menu-bar.jsx,reducers/modals.js,containers/gui.jsx,components/gui/gui.jsx}`:
   - Добавлен **SB3 Explorer** в меню «Файл» — виртуальный файловый проводник по содержимому проекта (например, `/snail/res/costumes/happy.svg`), предпросмотр картинок/звуков/JSON/кода расширений и выборочный экспорт (отмеченные элементы, только костюмы/фоны, только звуки, отдельные спрайты `.sprite3`, только расширения, всё дерево в ZIP).
 
+## v1.3.1 — Сворачивание папок и папки TurboWarp в SB3 Explorer
+
+- `packages/scratch-gui/src/{lib/uli-sb3-explorer.js,containers/uli-sb3-explorer-modal.jsx,components/uli-sb3-explorer/sb3-explorer-modal.{jsx,css}}`:
+  - В левом дереве добавлено сворачивание/разворачивание папок (`▸`/`▾`, двойной клик, кнопки `+`/`−` для всего дерева и автоматическое раскрытие предков при переходе).
+  - Добавлена поддержка папок TurboWarp (`Папка//Спрайт` и `Папка//Ресурс`) в дереве проводника, предпросмотре и экспорте `.sprite3`/ZIP.
+
 ## v1.2.2 — Перекраска PenguinMod-Paint в цвета темы UliBlock
 
 - `package.json`, `package-lock.json`, `docs/index.html`: версия обновлена до `1.2.2`.
