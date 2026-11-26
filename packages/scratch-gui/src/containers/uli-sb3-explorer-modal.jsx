@@ -29,6 +29,7 @@ class UliSb3ExplorerModal extends React.Component {
             currentPath: '/',
             selectedItemPath: '/project.json',
             checkedPaths: [],
+            collapsedPaths: [],
             searchQuery: '',
             exportMode: 'costumes',
             spriteExportAsZip: false,
@@ -127,14 +128,47 @@ class UliSb3ExplorerModal extends React.Component {
         const {snapshot} = this.state;
         const target = snapshot.nodesByPath[dirPath];
         if (!target || target.type !== 'dir') return;
-        this.setState({
+
+        // Ensure all ancestor folders of dirPath are expanded in the left tree
+        const ancestors = [];
+        let cursor = target.parentPath;
+        while (cursor) {
+            ancestors.push(cursor);
+            const parentNode = snapshot.nodesByPath[cursor];
+            cursor = parentNode ? parentNode.parentPath : null;
+        }
+
+        this.setState(prev => ({
             currentPath: dirPath,
             selectedItemPath: dirPath,
+            collapsedPaths: prev.collapsedPaths.filter(p => ancestors.indexOf(p) === -1),
             searchQuery: '',
             statusMessage: '',
             errorMessage: ''
-        });
+        }));
         this.loadPreviewForPath(dirPath, snapshot);
+    };
+
+    handleToggleCollapse = dirPath => {
+        this.setState(prev => {
+            const exists = prev.collapsedPaths.indexOf(dirPath) !== -1;
+            const next = exists ?
+                prev.collapsedPaths.filter(p => p !== dirPath) :
+                [...prev.collapsedPaths, dirPath];
+            return {collapsedPaths: next};
+        });
+    };
+
+    handleExpandAll = () => {
+        this.setState({collapsedPaths: []});
+    };
+
+    handleCollapseAll = () => {
+        const {snapshot} = this.state;
+        const allNestedDirs = Object.values(snapshot.nodesByPath)
+            .filter(n => n.type === 'dir' && n.path !== '/')
+            .map(n => n.path);
+        this.setState({collapsedPaths: allNestedDirs});
     };
 
     handleSelectItem = item => {
@@ -334,6 +368,7 @@ class UliSb3ExplorerModal extends React.Component {
                 currentPath={this.state.currentPath}
                 selectedItemPath={this.state.selectedItemPath}
                 checkedPaths={this.state.checkedPaths}
+                collapsedPaths={this.state.collapsedPaths}
                 searchQuery={this.state.searchQuery}
                 exportMode={this.state.exportMode}
                 spriteExportAsZip={this.state.spriteExportAsZip}
@@ -346,6 +381,9 @@ class UliSb3ExplorerModal extends React.Component {
                 onClose={this.props.onClose}
                 onRefresh={this.handleRefresh}
                 onNavigate={this.handleNavigate}
+                onToggleCollapse={this.handleToggleCollapse}
+                onExpandAll={this.handleExpandAll}
+                onCollapseAll={this.handleCollapseAll}
                 onSelectItem={this.handleSelectItem}
                 onToggleCheck={this.handleToggleCheck}
                 onCheckAllInFolder={this.handleCheckAllInFolder}

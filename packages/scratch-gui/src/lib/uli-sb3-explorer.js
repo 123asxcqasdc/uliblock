@@ -3,6 +3,8 @@ import downloadBlob from './download-blob';
 
 const textEncoder = new TextEncoder();
 
+const TW_FOLDER_DIVIDER = '//';
+
 const MIME_BY_EXT = {
     svg: 'image/svg+xml',
     png: 'image/png',
@@ -28,6 +30,27 @@ const sanitizeName = (raw, fallback = 'item') => {
     const str = typeof raw === 'string' ? raw.trim() : '';
     const cleaned = str.replace(/[/\\:*?"<>|\x00-\x1f]/g, '_').replace(/^\.+$/, '');
     return cleaned || fallback;
+};
+
+/**
+ * Splits a TurboWarp folder-prefixed name ("UI//HUD//Button") into folder segments and base name.
+ * Matches TurboWarp's folders addon convention (ignores leading "//").
+ * @param {string} rawName
+ * @param {string} fallback
+ */
+const splitTurboWarpName = (rawName, fallback = 'item') => {
+    const str = typeof rawName === 'string' ? rawName : '';
+    const idx = str.indexOf(TW_FOLDER_DIVIDER);
+    if (idx === -1 || idx === 0) {
+        return {
+            folders: [],
+            baseName: str || fallback
+        };
+    }
+    const parts = str.split(TW_FOLDER_DIVIDER);
+    const baseName = parts.pop() || fallback;
+    const folders = parts.filter(part => part && part.length > 0);
+    return {folders, baseName};
 };
 
 const uniqueFileName = (usedSet, baseName, ext) => {
@@ -126,6 +149,7 @@ const fetchExtensionBytes = async node => {
 
 /**
  * Builds an Explorer-style virtual filesystem snapshot of the current VM project.
+ * Supports TurboWarp sprite & asset folders ("Folder//Name").
  * @param {object} vm
  * @param {string} projectTitle
  */
@@ -142,11 +166,20 @@ const buildSb3ExplorerSnapshot = (vm, projectTitle = 'UliBlock Project') => {
     const projectJsonBytes = textEncoder.encode(formattedProjectJson);
 
     const nodesByPath = {};
+    const usedNamesByDir = new Map();
     const allFileNodes = [];
     const costumeNodes = [];
     const soundNodes = [];
     const extensionNodes = [];
     const spriteEntries = [];
+    let twFolderCount = 0;
+
+    const getUsedSet = dirPath => {
+        if (!usedNamesByDir.has(dirPath)) {
+            usedNamesByDir.set(dirPath, new Set());
+        }
+        return usedNamesByDir.get(dirPath);
+    };
 
     const ensureDir = (dirPath, name, parentPath, meta = {}) => {
         if (!nodesByPath[dirPath]) {
@@ -160,6 +193,7 @@ const buildSb3ExplorerSnapshot = (vm, projectTitle = 'UliBlock Project') => {
             nodesByPath[dirPath] = node;
             if (parentPath !== null && nodesByPath[parentPath]) {
                 nodesByPath[parentPath].children.push(node);
+                getUsedSet(parentPath).add(name.toLowerCase());
             }
         }
         return nodesByPath[dirPath];
@@ -175,9 +209,59 @@ const buildSb3ExplorerSnapshot = (vm, projectTitle = 'UliBlock Project') => {
         nodesByPath[filePath] = node;
         if (nodesByPath[parentPath]) {
             nodesByPath[parentPath].children.push(node);
+            getUsedSet(parentPath).add(name.toLowerCase());
         }
         allFileNodes.push(node);
         return node;
+    };
+
+    // Ensures a chain of TurboWarp folder directories under baseParentPath.
+    // Reuses an existing TurboWarp folder node when names match, avoiding reserved/target collisions.
+    const ensureTurboWarpFolders = (baseParentPath, folderSegments, folderKindMeta) => {
+        let curParent = baseParentPath;
+        const resolvedNames = [];
+        for (let i = 0; i < folderSegments.length; i++) {
+            const rawFolder = folderSegments[i];
+            const cleanFolder = sanitizeName(rawFolder, 'folder');
+            const prefix = curParent === '/' ? '' : curParent;
+            const exactCandidate = `${prefix}/${cleanFolder}`;
+            const existing = nodesByPath[exactCandidate];
+
+            let chosenName = cleanFolder;
+            if (existing) {
+                if (existing.type === 'dir' && existing.isTwFolder) {
+                    curParent = existing.path;
+                    resolvedNames.push(existing.name);
+                    continue;
+                }
+                // Existing non-TW node (e.g. /extensions, /fonts, or un-foldered sprite): find unique folder name
+                const usedSet = getUsedSet(curParent);
+                let idx = 2;
+                let altName = `${cleanFolder} (папка)`;
+                while (usedSet.has(altName.toLowerCase())) {
+                    altName = `${cleanFolder} (папка ${idx})`;
+                    idx++;
+                }
+                chosenName = altName;
+            }
+
+            const folderPath = `${prefix}/${chosenName}`;
+            const isNew = !nodesByPath[folderPath];
+            ensureDir(folderPath, chosenName, curParent, Object.assign({
+                isTwFolder: true,
+                twFolderName: rawFolder,
+                description: `Папка TurboWarp «${rawFolder}»`
+            }, folderKindMeta));
+            if (isNew && folderKindMeta && folderKindMeta.isTwSpriteFolder) {
+                twFolderCount++;
+            }
+            curParent = folderPath;
+            resolvedNames.push(chosenName);
+        }
+        return {
+            parentPath: curParent,
+            folderNames: resolvedNames
+        };
     };
 
     ensureDir('/', sanitizeName(projectTitle, 'project'), null, {isRoot: true});
@@ -192,38 +276,79 @@ const buildSb3ExplorerSnapshot = (vm, projectTitle = 'UliBlock Project') => {
         description: 'Корневой JSON проекта Scratch 3.0'
     });
 
-    const usedTopDirs = new Set(['extensions', 'fonts', 'project.json']);
+    // Reserve root-level special entries
+    const rootUsed = getUsedSet('/');
+    rootUsed.add('extensions');
+    rootUsed.add('fonts');
+    rootUsed.add('project.json');
+
     const targets = (vm.runtime && Array.isArray(vm.runtime.targets)) ?
         vm.runtime.targets.filter(t => t && t.isOriginal) :
         [];
     const jsonTargets = Array.isArray(projectJson.targets) ? projectJson.targets : [];
 
-    targets.forEach((target, idx) => {
-        const rawName = target.isStage ? 'Stage' : (target.sprite && target.sprite.name ? target.sprite.name : `Sprite${idx}`);
-        const dirName = uniqueDirName(usedTopDirs, rawName);
-        const targetDir = `/${dirName}`;
+    // Pre-create TurboWarp sprite folders so folders appear cleanly and don't clash with un-foldered sprites
+    const targetPlacements = targets.map((target, idx) => {
+        const rawName = target.isStage ?
+            'Stage' :
+            (target.sprite && target.sprite.name ? target.sprite.name : `Sprite${idx}`);
+        const parsed = target.isStage ? {folders: [], baseName: 'Stage'} : splitTurboWarpName(rawName, `Sprite${idx}`);
+        let parentPath = '/';
+        let resolvedFolderNames = [];
+        if (parsed.folders.length > 0) {
+            const folderRes = ensureTurboWarpFolders('/', parsed.folders, {isTwSpriteFolder: true});
+            parentPath = folderRes.parentPath;
+            resolvedFolderNames = folderRes.folderNames;
+        }
+        return {
+            target,
+            idx,
+            rawName,
+            baseName: parsed.baseName,
+            twFolders: parsed.folders,
+            resolvedFolderNames,
+            parentPath
+        };
+    });
+
+    targetPlacements.forEach(item => {
+        const {target, idx, rawName, baseName, twFolders, resolvedFolderNames, parentPath} = item;
+        const parentUsedSet = getUsedSet(parentPath);
+        const dirName = uniqueDirName(parentUsedSet, baseName);
+        const targetDir = parentPath === '/' ? `/${dirName}` : `${parentPath}/${dirName}`;
         const resDir = `${targetDir}/res`;
         const costumeFolderName = target.isStage ? 'backdrops' : 'costumes';
         const costumesDir = `${resDir}/${costumeFolderName}`;
         const soundsDir = `${resDir}/sounds`;
 
-        ensureDir(targetDir, dirName, '/', {
+        ensureDir(targetDir, dirName, parentPath, {
             isTargetDir: true,
             isStage: Boolean(target.isStage),
             targetId: target.id,
-            displayName: rawName
+            displayName: baseName,
+            fullName: rawName,
+            twFolderLabel: twFolders.join(' / ')
         });
         ensureDir(resDir, 'res', targetDir);
         ensureDir(costumesDir, costumeFolderName, resDir);
         ensureDir(soundsDir, 'sounds', resDir);
 
         const costumes = (target.sprite && Array.isArray(target.sprite.costumes)) ? target.sprite.costumes : [];
-        const usedCostumeNames = new Set();
         costumes.forEach(costume => {
+            const parsedAsset = splitTurboWarpName(costume.name || 'costume', 'costume');
+            let assetParentDir = costumesDir;
+            if (parsedAsset.folders.length > 0) {
+                assetParentDir = ensureTurboWarpFolders(
+                    costumesDir,
+                    parsedAsset.folders,
+                    {isTwAssetFolder: true}
+                ).parentPath;
+            }
+            const usedCostumeNames = getUsedSet(assetParentDir);
             const ext = (costume.dataFormat || 'svg').toLowerCase();
-            const fileName = uniqueFileName(usedCostumeNames, costume.name || 'costume', ext);
+            const fileName = uniqueFileName(usedCostumeNames, parsedAsset.baseName, ext);
             const bytes = toUint8Array(costume.asset && costume.asset.data);
-            const node = addFile(`${costumesDir}/${fileName}`, costumesDir, fileName, {
+            const node = addFile(`${assetParentDir}/${fileName}`, assetParentDir, fileName, {
                 kind: 'costume',
                 isBackdrop: Boolean(target.isStage),
                 spriteName: rawName,
@@ -242,12 +367,21 @@ const buildSb3ExplorerSnapshot = (vm, projectTitle = 'UliBlock Project') => {
         });
 
         const sounds = (target.sprite && Array.isArray(target.sprite.sounds)) ? target.sprite.sounds : [];
-        const usedSoundNames = new Set();
         sounds.forEach(sound => {
+            const parsedAsset = splitTurboWarpName(sound.name || 'sound', 'sound');
+            let assetParentDir = soundsDir;
+            if (parsedAsset.folders.length > 0) {
+                assetParentDir = ensureTurboWarpFolders(
+                    soundsDir,
+                    parsedAsset.folders,
+                    {isTwAssetFolder: true}
+                ).parentPath;
+            }
+            const usedSoundNames = getUsedSet(assetParentDir);
             const ext = (sound.dataFormat || 'wav').toLowerCase();
-            const fileName = uniqueFileName(usedSoundNames, sound.name || 'sound', ext);
+            const fileName = uniqueFileName(usedSoundNames, parsedAsset.baseName, ext);
             const bytes = toUint8Array(sound.asset && sound.asset.data);
-            const node = addFile(`${soundsDir}/${fileName}`, soundsDir, fileName, {
+            const node = addFile(`${assetParentDir}/${fileName}`, assetParentDir, fileName, {
                 kind: 'sound',
                 spriteName: rawName,
                 originalName: sound.name || fileName,
@@ -278,7 +412,7 @@ const buildSb3ExplorerSnapshot = (vm, projectTitle = 'UliBlock Project') => {
             description: target.isStage ? 'JSON-данные сцены' : `JSON-данные спрайта «${rawName}»`
         });
 
-        // Virtual .sprite3 file for non-stage sprites (and stage too if desired, labeled clearly)
+        // Virtual .sprite3 file for non-stage sprites
         if (!target.isStage) {
             const sprite3Name = `${dirName}.sprite3`;
             addFile(`${targetDir}/${sprite3Name}`, targetDir, sprite3Name, {
@@ -294,7 +428,10 @@ const buildSb3ExplorerSnapshot = (vm, projectTitle = 'UliBlock Project') => {
 
         spriteEntries.push({
             id: target.id,
-            name: rawName,
+            name: baseName,
+            fullName: rawName,
+            twFolders: resolvedFolderNames,
+            twFolderLabel: twFolders.join(' / '),
             dirName,
             dirPath: targetDir,
             isStage: Boolean(target.isStage),
@@ -427,6 +564,7 @@ const buildSb3ExplorerSnapshot = (vm, projectTitle = 'UliBlock Project') => {
         spriteEntries,
         stats: {
             spriteCount: spriteEntries.filter(s => !s.isStage).length,
+            folderCount: twFolderCount,
             costumeCount: costumeNodes.length,
             soundCount: soundNodes.length,
             extensionCount: extensionsSummary.length,
@@ -502,13 +640,20 @@ const exportSpritesAsSprite3 = async (vm, spriteEntries, asZip, zipFilename, onP
     }
     if (asZip && filtered.length > 1) {
         const zip = new JSZip();
-        const used = new Set();
+        const usedByFolder = new Map();
         for (let i = 0; i < filtered.length; i++) {
             const entry = filtered[i];
-            if (onProgress) onProgress(i + 1, filtered.length, entry.name);
+            if (onProgress) onProgress(i + 1, filtered.length, entry.fullName || entry.name);
             const buf = await vm.exportSprite(entry.id, 'uint8array');
-            const fileName = uniqueFileName(used, entry.name, 'sprite3');
-            zip.file(fileName, buf);
+            const folderPrefix = entry.twFolders && entry.twFolders.length > 0 ?
+                entry.twFolders.join('/') :
+                '';
+            if (!usedByFolder.has(folderPrefix)) {
+                usedByFolder.set(folderPrefix, new Set());
+            }
+            const fileName = uniqueFileName(usedByFolder.get(folderPrefix), entry.dirName || entry.name, 'sprite3');
+            const zipEntryPath = folderPrefix ? `${folderPrefix}/${fileName}` : fileName;
+            zip.file(zipEntryPath, buf);
         }
         const blob = await zip.generateAsync({
             type: 'blob',
@@ -522,9 +667,12 @@ const exportSpritesAsSprite3 = async (vm, spriteEntries, asZip, zipFilename, onP
     const used = new Set();
     for (let i = 0; i < filtered.length; i++) {
         const entry = filtered[i];
-        if (onProgress) onProgress(i + 1, filtered.length, entry.name);
+        if (onProgress) onProgress(i + 1, filtered.length, entry.fullName || entry.name);
         const blob = await vm.exportSprite(entry.id, 'blob');
-        const fileName = uniqueFileName(used, entry.name, 'sprite3');
+        const label = entry.twFolders && entry.twFolders.length > 0 ?
+            `${entry.twFolders.join(' - ')} - ${entry.dirName || entry.name}` :
+            (entry.dirName || entry.name);
+        const fileName = uniqueFileName(used, label, 'sprite3');
         downloadBlob(fileName, blob);
         if (i < filtered.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 180));
@@ -535,6 +683,7 @@ const exportSpritesAsSprite3 = async (vm, spriteEntries, asZip, zipFilename, onP
 export {
     formatBytes,
     sanitizeName,
+    splitTurboWarpName,
     fetchExtensionBytes,
     buildSb3ExplorerSnapshot,
     collectFilesUnderPath,
