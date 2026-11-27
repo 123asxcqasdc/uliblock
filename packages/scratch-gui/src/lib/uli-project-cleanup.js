@@ -5,6 +5,11 @@ import UndoGroup from '../addons/addons/editor-devtools/UndoGroup';
 const nextTick = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
 const nextFrame = () => new Promise(resolve => requestAnimationFrame(() => resolve()));
 
+const isBlockDisposed = block => (
+    !block ||
+    (typeof block.isDisposed === 'function' ? block.isDisposed() : !block.workspace)
+);
+
 const getBlockHeightWidthSafe = block => {
     try {
         if (block && typeof block.getHeightWidth === 'function') {
@@ -166,17 +171,21 @@ const getOrderedTopBlockColumns = (workspace, {separateOrphans = true, longestRi
     if (separateOrphans) {
         const topComments = workspace.getTopComments();
         for (const comment of topComments) {
-            if (!comment || !comment.block_) continue;
+            if (!comment || isBlockDisposed(comment.block_)) continue;
             if (comment.setVisible) {
-                comment.setVisible(false);
-                comment.needsAutoPositioning_ = true;
-                comment.setVisible(true);
+                try {
+                    comment.setVisible(false);
+                    comment.needsAutoPositioning_ = true;
+                    comment.setVisible(true);
 
-                const right = comment.getBoundingRectangle().bottomRight.x;
-                const root = comment.block_.getRootBlock();
-                if (root) {
-                    const left = root.getBoundingRectangle().topLeft.x;
-                    maxWidths[root.id] = Math.max(right - left, maxWidths[root.id] || 0);
+                    const right = comment.getBoundingRectangle().bottomRight.x;
+                    const root = comment.block_.getRootBlock();
+                    if (root && !isBlockDisposed(root)) {
+                        const left = root.getBoundingRectangle().topLeft.x;
+                        maxWidths[root.id] = Math.max(right - left, maxWidths[root.id] || 0);
+                    }
+                } catch (_e) {
+                    // ignore comment layout edge cases
                 }
             }
         }
@@ -187,7 +196,7 @@ const getOrderedTopBlockColumns = (workspace, {separateOrphans = true, longestRi
     const orphans = {x: -999999, count: 0, blocks: []};
 
     for (const topBlock of topBlocks) {
-        if (!topBlock || topBlock.isDisposed()) continue;
+        if (isBlockDisposed(topBlock)) continue;
         const position = topBlock.getRelativeToSurfaceXY();
 
         if (separateOrphans && topBlock.outputConnection) {
@@ -309,7 +318,7 @@ const layoutColumnsCleanUpPlus = ({
     if (result.orphans.blocks.length > 0 && !makeSpaceForBlock) {
         if (removeOrphans) {
             for (const orphanBlock of result.orphans.blocks) {
-                if (orphanBlock && !orphanBlock.isDisposed()) {
+                if (!isBlockDisposed(orphanBlock)) {
                     orphanBlock.dispose(false);
                     orphansRemoved++;
                 }
@@ -327,7 +336,7 @@ const layoutColumnsCleanUpPlus = ({
         let maxWidth = 0;
 
         for (const block of column.blocks) {
-            if (!block || block.isDisposed()) continue;
+            if (isBlockDisposed(block)) continue;
             const extraWidth = block === makeSpaceForBlock ? 380 : 0;
             const extraHeight = block === makeSpaceForBlock ? 480 : 72;
             const xy = block.getRelativeToSurfaceXY();
@@ -392,7 +401,7 @@ const cleanCurrentWorkspaceBlocks = ({
 
         if (removeHatless) {
             for (const topBlock of topBlocks) {
-                if (!topBlock || topBlock.isDisposed()) continue;
+                if (isBlockDisposed(topBlock)) continue;
                 if (!isBlocklyHatBlock(runtime, topBlock)) {
                     blocksToDelete.push({block: topBlock, kind: topBlock.outputConnection ? 'orphan' : 'hatless'});
                     deleteIdSet.add(topBlock.id);
@@ -403,7 +412,7 @@ const cleanCurrentWorkspaceBlocks = ({
         if (removeEmptyHats) {
             const calledProcCodes = new Set();
             for (const topBlock of topBlocks) {
-                if (!topBlock || topBlock.isDisposed() || deleteIdSet.has(topBlock.id)) continue;
+                if (isBlockDisposed(topBlock) || deleteIdSet.has(topBlock.id)) continue;
                 const descendants = topBlock.getDescendants(false);
                 for (const d of descendants) {
                     if (d.type === 'procedures_call' && typeof d.getProcCode === 'function') {
@@ -413,7 +422,7 @@ const cleanCurrentWorkspaceBlocks = ({
             }
 
             for (const topBlock of topBlocks) {
-                if (!topBlock || topBlock.isDisposed() || deleteIdSet.has(topBlock.id)) continue;
+                if (isBlockDisposed(topBlock) || deleteIdSet.has(topBlock.id)) continue;
                 if (!isBlocklyHatBlock(runtime, topBlock)) continue;
                 if (topBlock.getNextBlock() === null) {
                     if (topBlock.type === 'procedures_definition') {
@@ -429,7 +438,7 @@ const cleanCurrentWorkspaceBlocks = ({
         }
 
         for (const item of blocksToDelete) {
-            if (item.block && !item.block.isDisposed()) {
+            if (!isBlockDisposed(item.block)) {
                 item.block.dispose(false);
                 if (item.kind === 'emptyHat') {
                     stats.emptyHatsRemoved++;

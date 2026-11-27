@@ -161,6 +161,12 @@
   - В список источников «Галереи расширений UliBlock» добавлены новые источники из `123asxcqasdc/turbowarp-extensions`: **⚡ ElectraMod** (`https://electramod-extensions-gallery.vercel.app/`) и **🐈 Gaia’s Gallery** (`https://github.com/gaiawindwave90/gaias-gallery`).
   - Добавлено безопасное отображение и сортировка любых новых/неизвестных источников, если они появятся в будущем каталоге `extensions.json`.
 
+## v1.5.0 — Исправление ошибки `isDisposed is not a function` при очистке проекта
+
+- `packages/scratch-gui/src/lib/uli-project-cleanup.js`:
+  - Исправлена ошибка `t.isDisposed is not a function` при запуске глобальной очистки проекта (`scratch-blocks` не имеет метода `block.isDisposed()` — вместо этого удалённость блока определяется по `!block.workspace` с обратной совместимостью с `isDisposed()`).
+  - Добавлена дополнительная защита при измерении комментариев к блокам, чтобы редкие нестандартные комментарии не прерывали очистку больших проектов.
+
 ## v1.2.2 — Перекраска PenguinMod-Paint в цвета темы UliBlock
 
 - `package.json`, `package-lock.json`, `docs/index.html`: версия обновлена до `1.2.2`.
