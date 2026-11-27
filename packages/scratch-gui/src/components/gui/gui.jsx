@@ -39,6 +39,8 @@ import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.j
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
 import UliThemeEditorModal from '../../containers/uli-theme-editor-modal.jsx';
 import UliSb3ExplorerModal from '../../containers/uli-sb3-explorer-modal.jsx';
+import UliSendScriptModal from '../../containers/uli-send-script-modal.jsx';
+import UliCleanupModal from '../../containers/uli-cleanup-modal.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/layout-constants';
 import {resolveStageSize} from '../../lib/screen-utils';
@@ -162,6 +164,8 @@ const GUIComponent = props => {
         invalidProjectModalVisible,
         themeEditorModalVisible,
         sb3ExplorerModalVisible,
+        sendScriptModalVisible,
+        cleanupProjectModalVisible,
         vm,
         ...componentProps
     } = omit(props, 'dispatch');
@@ -198,6 +202,8 @@ const GUIComponent = props => {
                 {invalidProjectModalVisible && <TWInvalidProjectModal />}
                 {themeEditorModalVisible && <UliThemeEditorModal />}
                 {sb3ExplorerModalVisible && <UliSb3ExplorerModal />}
+                {sendScriptModalVisible && <UliSendScriptModal />}
+                {cleanupProjectModalVisible && <UliCleanupModal />}
             </React.Fragment>
         );
 
@@ -548,6 +554,8 @@ GUIComponent.propTypes = {
     invalidProjectModalVisible: PropTypes.bool,
     themeEditorModalVisible: PropTypes.bool,
     sb3ExplorerModalVisible: PropTypes.bool,
+    sendScriptModalVisible: PropTypes.bool,
+    cleanupProjectModalVisible: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 GUIComponent.defaultProps = {

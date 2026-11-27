@@ -20,6 +20,8 @@ const MODAL_UNKNOWN_PLATFORM = 'unknownPlatformModal';
 const MODAL_INVALID_PROJECT = 'invalidProjectModal';
 const MODAL_THEME_EDITOR = 'themeEditorModal';
 const MODAL_SB3_EXPLORER = 'sb3ExplorerModal';
+const MODAL_SEND_SCRIPT = 'sendScriptModal';
+const MODAL_CLEANUP_PROJECT = 'cleanupProjectModal';
 
 const initialState = {
     [MODAL_BACKDROP_LIBRARY]: false,
@@ -40,7 +42,9 @@ const initialState = {
     [MODAL_UNKNOWN_PLATFORM]: false,
     [MODAL_INVALID_PROJECT]: false,
     [MODAL_THEME_EDITOR]: false,
-    [MODAL_SB3_EXPLORER]: false
+    [MODAL_SB3_EXPLORER]: false,
+    [MODAL_SEND_SCRIPT]: false,
+    [MODAL_CLEANUP_PROJECT]: false
 };
 
 const reducer = function (state, action) {
@@ -127,6 +131,12 @@ const openThemeEditorModal = function () {
 const openSb3ExplorerModal = function () {
     return openModal(MODAL_SB3_EXPLORER);
 };
+const openSendScriptModal = function () {
+    return openModal(MODAL_SEND_SCRIPT);
+};
+const openCleanupProjectModal = function () {
+    return openModal(MODAL_CLEANUP_PROJECT);
+};
 const closeBackdropLibrary = function () {
     return closeModal(MODAL_BACKDROP_LIBRARY);
 };
@@ -184,6 +194,12 @@ const closeThemeEditorModal = function () {
 const closeSb3ExplorerModal = function () {
     return closeModal(MODAL_SB3_EXPLORER);
 };
+const closeSendScriptModal = function () {
+    return closeModal(MODAL_SEND_SCRIPT);
+};
+const closeCleanupProjectModal = function () {
+    return closeModal(MODAL_CLEANUP_PROJECT);
+};
 export {
     reducer as default,
     initialState as modalsInitialState,
@@ -206,6 +222,8 @@ export {
     openInvalidProjectModal,
     openThemeEditorModal,
     openSb3ExplorerModal,
+    openSendScriptModal,
+    openCleanupProjectModal,
     closeBackdropLibrary,
     closeCostumeLibrary,
     closeExtensionLibrary,
@@ -224,5 +242,7 @@ export {
     closeUnknownPlatformModal,
     closeInvalidProjectModal,
     closeThemeEditorModal,
-    closeSb3ExplorerModal
+    closeSb3ExplorerModal,
+    closeSendScriptModal,
+    closeCleanupProjectModal
 };

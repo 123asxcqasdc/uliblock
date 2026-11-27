@@ -34,7 +34,13 @@ import CloudVariablesToggler from '../../containers/tw-cloud-toggler.jsx';
 import TWSaveStatus from './tw-save-status.jsx';
 import TWNews from './tw-news.jsx';
 
-import {openTipsLibrary, openSettingsModal, openRestorePointModal, openSb3ExplorerModal} from '../../reducers/modals';
+import {
+    openTipsLibrary,
+    openSettingsModal,
+    openRestorePointModal,
+    openSb3ExplorerModal,
+    openCleanupProjectModal
+} from '../../reducers/modals';
 import {setPlayer} from '../../reducers/mode';
 import {
     isTimeTravel220022BC,
@@ -840,6 +846,17 @@ class MenuBar extends React.Component {
                                         </MenuItem>
                                     )}</CloudVariablesToggler>
                                 </MenuSection>
+                                {!this.props.isPlayerOnly && (
+                                    <MenuSection>
+                                        <MenuItem onClick={this.props.onClickCleanupProject}>
+                                            <span>
+                                                {this.props.locale && this.props.locale.toLowerCase().startsWith('ru') ?
+                                                    'Очистка кода (все спрайты)...' :
+                                                    'Clean up code (all sprites)...'}
+                                            </span>
+                                        </MenuItem>
+                                    </MenuSection>
+                                )}
                                 <MenuSection>
                                     <MenuItem onClick={this.props.onClickSettingsModal}>
                                         <FormattedMessage
@@ -1126,6 +1143,7 @@ MenuBar.propTypes = {
     onClickPackager: PropTypes.func,
     onClickRestorePoints: PropTypes.func,
     onClickSb3Explorer: PropTypes.func,
+    onClickCleanupProject: PropTypes.func,
     onClickEdit: PropTypes.func,
     onClickFile: PropTypes.func,
     onClickLogin: PropTypes.func,
@@ -1227,6 +1245,10 @@ const mapDispatchToProps = dispatch => ({
     onRequestCloseAbout: () => dispatch(closeAboutMenu()),
     onClickRestorePoints: () => dispatch(openRestorePointModal()),
     onClickSb3Explorer: () => dispatch(openSb3ExplorerModal()),
+    onClickCleanupProject: () => {
+        dispatch(closeEditMenu());
+        dispatch(openCleanupProjectModal());
+    },
     onClickSettings: () => dispatch(openSettingsMenu()),
     onClickSettingsModal: () => {
         dispatch(closeEditMenu());
