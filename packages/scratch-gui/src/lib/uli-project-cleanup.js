@@ -165,14 +165,34 @@ const scanProjectCleanupStats = vm => {
 };
 
 const SCRIPTS_PER_COLUMN = 5;
-const LONG_SCRIPT_HEIGHT = 550;
-const LONG_SCRIPT_BLOCKS = 12;
+const LONG_HORIZONTAL_WIDTH = 600;
+const LONG_INLINE_REPORTERS = 6;
 
-const countVerticalBlocks = block => {
+const countMaxInlineReporters = block => {
     if (!block || isBlockDisposed(block)) return 0;
+
+    const countExprReporters = (expr, seenExpr = new Set()) => {
+        if (!expr || isBlockDisposed(expr)) return 0;
+        const exprKey = expr.id || expr;
+        if (seenExpr.has(exprKey)) return 0;
+        seenExpr.add(exprKey);
+
+        let total = 1;
+        const inputs = Array.isArray(expr.inputList) ? expr.inputList : [];
+        for (const input of inputs) {
+            const target = input && input.connection && typeof input.connection.targetBlock === 'function' ?
+                input.connection.targetBlock() :
+                null;
+            if (target && !isBlockDisposed(target) && target.outputConnection) {
+                total += countExprReporters(target, seenExpr);
+            }
+        }
+        return total;
+    };
+
+    let maxInStack = 0;
     const visited = new Set();
     const stack = [block];
-    let count = 0;
 
     while (stack.length > 0) {
         const cur = stack.pop();
@@ -180,22 +200,29 @@ const countVerticalBlocks = block => {
         const key = cur.id || cur;
         if (visited.has(key)) continue;
         visited.add(key);
-        count++;
 
         try {
-            if (typeof cur.getNextBlock === 'function') {
-                const next = cur.getNextBlock();
-                if (next && !isBlockDisposed(next)) {
-                    stack.push(next);
-                }
-            }
+            let rowReporters = 0;
             const inputs = Array.isArray(cur.inputList) ? cur.inputList : [];
             for (const input of inputs) {
                 const target = input && input.connection && typeof input.connection.targetBlock === 'function' ?
                     input.connection.targetBlock() :
                     null;
-                if (target && !isBlockDisposed(target) && !target.outputConnection && target.previousConnection) {
+                if (!target || isBlockDisposed(target)) continue;
+                if (target.outputConnection) {
+                    rowReporters += countExprReporters(target);
+                } else if (target.previousConnection) {
                     stack.push(target);
+                }
+            }
+            if (rowReporters > maxInStack) {
+                maxInStack = rowReporters;
+            }
+
+            if (typeof cur.getNextBlock === 'function') {
+                const next = cur.getNextBlock();
+                if (next && !isBlockDisposed(next)) {
+                    stack.push(next);
                 }
             }
         } catch (_e) {
@@ -203,21 +230,24 @@ const countVerticalBlocks = block => {
         }
     }
 
-    return count;
+    return maxInStack;
 };
 
-const getScriptLengthMetrics = block => {
+const getScriptHorizontalMetrics = (block, maxWidths) => {
     const hw = getBlockHeightWidthSafe(block);
-    const verticalBlocks = countVerticalBlocks(block);
+    const widthWithComments = Math.max(hw.width, (maxWidths && maxWidths[block.id]) || 0);
+    const maxInlineReporters = widthWithComments > 0 ? 0 : countMaxInlineReporters(block);
     return {
+        width: widthWithComments,
         height: hw.height,
-        verticalBlocks
+        maxInlineReporters
     };
 };
 
-const isLongScript = metrics => (
-    metrics.height >= LONG_SCRIPT_HEIGHT ||
-    metrics.verticalBlocks >= LONG_SCRIPT_BLOCKS
+const isLongHorizontalScript = metrics => (
+    metrics.width > 0 ?
+        metrics.width >= LONG_HORIZONTAL_WIDTH :
+        metrics.maxInlineReporters >= LONG_INLINE_REPORTERS
 );
 
 const getOrderedTopBlockColumns = (workspace, {separateOrphans = true, longestRight = true} = {}) => {
@@ -259,18 +289,20 @@ const getOrderedTopBlockColumns = (workspace, {separateOrphans = true, longestRi
             continue;
         }
 
-        const metrics = getScriptLengthMetrics(topBlock);
+        const metrics = getScriptHorizontalMetrics(topBlock, maxWidths);
         scriptItems.push({
             block: topBlock,
             xy,
+            width: metrics.width,
             height: metrics.height,
-            verticalBlocks: metrics.verticalBlocks
+            maxInlineReporters: metrics.maxInlineReporters
         });
     }
 
-    const compareByLength = (a, b) => (
+    const compareByHorizontalWidth = (a, b) => (
+        (a.width - b.width) ||
+        (a.maxInlineReporters - b.maxInlineReporters) ||
         (a.height - b.height) ||
-        (a.verticalBlocks - b.verticalBlocks) ||
         (a.xy.y - b.xy.y) ||
         (a.xy.x - b.xy.x)
     );
@@ -286,15 +318,15 @@ const getOrderedTopBlockColumns = (workspace, {separateOrphans = true, longestRi
         const normalItems = [];
         const longItems = [];
         for (const item of scriptItems) {
-            if (isLongScript(item)) {
+            if (isLongHorizontalScript(item)) {
                 longItems.push(item);
             } else {
                 normalItems.push(item);
             }
         }
 
-        normalItems.sort(compareByLength);
-        longItems.sort(compareByLength);
+        normalItems.sort(compareByHorizontalWidth);
+        longItems.sort(compareByHorizontalWidth);
 
         for (let i = 0; i < normalItems.length; i += SCRIPTS_PER_COLUMN) {
             const chunk = normalItems.slice(i, i + SCRIPTS_PER_COLUMN);
