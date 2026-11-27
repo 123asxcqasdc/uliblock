@@ -147,6 +147,14 @@
 - `src-main/auto-updater.js`:
   - На Windows путь к скачанному `.msi` записывается в `update-path.txt`, а запуск ожидания и `msiexec.exe /i ... /passive` выполняется через `wscript.exe` (`run-autoupdate.vbs`), полностью без окна командной строки `cmd.exe`.
 
+## v1.4.0 — Отправка скриптов нескольким спрайтам и тихая очистка проекта
+
+- `packages/scratch-gui/src/{lib/uli-send-script.js,containers/uli-send-script-modal.jsx,components/uli-send-script/*,containers/blocks.jsx}`:
+  - В контекстное меню блока/скрипта (ПКМ) добавлен пункт **«Отправить»** — открывает окно выбора сразу нескольких спрайтов и/или сцены (с поиском, иконками, поддержкой папок TurboWarp, выбором «весь скрипт» / «от выбранного блока», разрешением конфликтов локальных переменных и размещением без наложения).
+- `packages/scratch-gui/src/{lib/uli-project-cleanup.js,containers/uli-cleanup-modal.jsx,components/uli-cleanup/*,addons/addons/editor-devtools/DevTools.js,components/menu-bar/menu-bar.jsx}`:
+  - В меню «Правка» и в контекстное меню рабочей области добавлена глобальная **«Очистка кода (все спрайты)...»**: удаляет скрипты без шапки, пустые шапки без кода, неиспользуемые локальные переменные и списки, и запускает «Очистить блоки +» во всех спрайтах и на сцене.
+  - В «Очистить блоки +» (`editor-devtools`) и глобальной очистке полностью убраны всплывающие `confirm()`-вопросы про неиспользуемые сенсоры и локальные переменные/списки, а самые длинные скрипты автоматически перемещаются направо.
+
 ## v1.2.2 — Перекраска PenguinMod-Paint в цвета темы UliBlock
 
 - `package.json`, `package-lock.json`, `docs/index.html`: версия обновлена до `1.2.2`.

@@ -1,6 +1,10 @@
 // import ShowBroadcast from "./show-broadcast.js";
 import DomHelpers from "./DomHelpers.js";
 import UndoGroup from "./UndoGroup.js";
+import {
+  getOrderedTopBlockColumns as getUliOrderedTopBlockColumns,
+  layoutColumnsCleanUpPlus,
+} from "../../../lib/uli-project-cleanup.js";
 
 export default class DevTools {
   constructor(addon, msg, m) {
@@ -196,125 +200,17 @@ export default class DevTools {
     let makeSpaceForBlock = block && block.getRootBlock();
 
     UndoGroup.startUndoGroup(workspace);
-
-    let result = this.getOrderedTopBlockColumns(true);
-    let columns = result.cols;
-    let orphanCount = result.orphans.blocks.length;
-    if (orphanCount > 0 && !block) {
-      let message = this.msg("orphaned", {
-        count: orphanCount,
+    try {
+      layoutColumnsCleanUpPlus({
+        workspace,
+        makeSpaceForBlock: makeSpaceForBlock || null,
+        removeOrphans: !block,
+        removeUnusedVarsAndLists: !block,
+        longestRight: true,
       });
-      if (confirm(message)) {
-        for (const block of result.orphans.blocks) {
-          block.dispose();
-        }
-      } else {
-        columns.unshift(result.orphans);
-      }
-    }
-
-    let cursorX = 48;
-
-    let maxWidths = result.maxWidths;
-
-    for (const column of columns) {
-      let cursorY = 64;
-      let maxWidth = 0;
-
-      for (const block of column.blocks) {
-        let extraWidth = block === makeSpaceForBlock ? 380 : 0;
-        let extraHeight = block === makeSpaceForBlock ? 480 : 72;
-        let xy = block.getRelativeToSurfaceXY();
-        if (cursorX - xy.x !== 0 || cursorY - xy.y !== 0) {
-          block.moveBy(cursorX - xy.x, cursorY - xy.y);
-        }
-        let heightWidth = block.getHeightWidth();
-        cursorY += heightWidth.height + extraHeight;
-
-        let maxWidthWithComments = maxWidths[block.id] || 0;
-        maxWidth = Math.max(maxWidth, Math.max(heightWidth.width + extraWidth, maxWidthWithComments));
-      }
-
-      cursorX += maxWidth + 96;
-    }
-
-    let topComments = workspace.getTopComments();
-    for (const comment of topComments) {
-      if (comment.setVisible) {
-        comment.setVisible(false);
-        comment.needsAutoPositioning_ = true;
-        comment.setVisible(true);
-      }
-    }
-
-    setTimeout(() => {
-      // Locate unused local variables...
-      let workspace = this.getWorkspace();
-      let map = workspace.getVariableMap();
-      let vars = map.getVariablesOfType("");
-      let unusedLocals = [];
-
-      for (const row of vars) {
-        if (row.isLocal) {
-          let usages = map.getVariableUsesById(row.getId());
-          if (!usages || usages.length === 0) {
-            unusedLocals.push(row);
-          }
-        }
-      }
-
-      if (unusedLocals.length > 0) {
-        const unusedCount = unusedLocals.length;
-        let message = this.msg("unused-var", {
-          count: unusedCount,
-        });
-        for (let i = 0; i < unusedLocals.length; i++) {
-          let orphan = unusedLocals[i];
-          if (i > 0) {
-            message += ", ";
-          }
-          message += orphan.name;
-        }
-        if (confirm(message)) {
-          for (const orphan of unusedLocals) {
-            workspace.deleteVariableById(orphan.getId());
-          }
-        }
-      }
-
-      // Locate unused local lists...
-      let lists = map.getVariablesOfType("list");
-      let unusedLists = [];
-
-      for (const row of lists) {
-        if (row.isLocal) {
-          let usages = map.getVariableUsesById(row.getId());
-          if (!usages || usages.length === 0) {
-            unusedLists.push(row);
-          }
-        }
-      }
-      if (unusedLists.length > 0) {
-        const unusedCount = unusedLists.length;
-        let message = this.msg("unused-list", {
-          count: unusedCount,
-        });
-        for (let i = 0; i < unusedLists.length; i++) {
-          let orphan = unusedLists[i];
-          if (i > 0) {
-            message += ", ";
-          }
-          message += orphan.name;
-        }
-        if (confirm(message)) {
-          for (const orphan of unusedLists) {
-            workspace.deleteVariableById(orphan.getId());
-          }
-        }
-      }
-
+    } finally {
       UndoGroup.endUndoGroup(workspace);
-    }, 100);
+    }
   }
 
   /**
@@ -333,85 +229,15 @@ export default class DevTools {
    */
   getOrderedTopBlockColumns(separateOrphans) {
     let w = this.getWorkspace();
-    let topBlocks = w.getTopBlocks();
-    let maxWidths = {};
-
-    if (separateOrphans) {
-      let topComments = w.getTopComments();
-
-      // todo: tie comments to blocks... find widths and width of block stack row...
-      for (const comment of topComments) {
-        // comment.autoPosition_();
-        // Hiding and showing repositions the comment right next to it's block - nice!
-        if (comment.setVisible) {
-          comment.setVisible(false);
-          comment.needsAutoPositioning_ = true;
-          comment.setVisible(true);
-
-          // let bb = comment.block_.svgPath_.getBBox();
-          let right = comment.getBoundingRectangle().bottomRight.x;
-
-          // Get top block for stack...
-          let root = comment.block_.getRootBlock();
-          let left = root.getBoundingRectangle().topLeft.x;
-          maxWidths[root.id] = Math.max(right - left, maxWidths[root.id] || 0);
-        }
-      }
-    }
-
-    // Default scratch ordering is horrid... Lets try something more clever.
-
-    /**
-     * @type {Col[]}
-     */
-    let cols = [];
-    const TOLERANCE = 256;
-    let orphans = { x: -999999, count: 0, blocks: [] };
-
-    for (const topBlock of topBlocks) {
-      // let r = b.getBoundingRectangle();
-      let position = topBlock.getRelativeToSurfaceXY();
-      /**
-       * @type {Col}
-       */
-      let bestCol = null;
-      let bestError = TOLERANCE;
-
-      if (separateOrphans && this.isBlockAnOrphan(topBlock)) {
-        orphans.blocks.push(topBlock);
-        continue;
-      }
-
-      // Find best columns
-      for (const col of cols) {
-        let err = Math.abs(position.x - col.x);
-        if (err < bestError) {
-          bestError = err;
-          bestCol = col;
-        }
-      }
-
-      if (bestCol) {
-        // We found a column that we fitted into
-        bestCol.x = (bestCol.x * bestCol.count + position.x) / ++bestCol.count; // re-average the columns as more items get added...
-        bestCol.blocks.push(topBlock);
-      } else {
-        // Create a new column
-        cols.push(new Col(position.x, 1, [topBlock]));
-      }
-    }
-
-    // if (orphans.blocks.length > 0) {
-    //     cols.push(orphans);
-    // }
-
-    // Sort columns, then blocks inside the columns
-    cols.sort((a, b) => a.x - b.x);
-    for (const col of cols) {
-      col.blocks.sort((a, b) => a.getRelativeToSurfaceXY().y - b.getRelativeToSurfaceXY().y);
-    }
-
-    return { cols: cols, orphans: orphans, maxWidths: maxWidths };
+    const res = getUliOrderedTopBlockColumns(w, {
+      separateOrphans: Boolean(separateOrphans),
+      longestRight: true,
+    });
+    return {
+      cols: res.cols.map((c) => new Col(c.x, c.count, c.blocks)),
+      orphans: res.orphans,
+      maxWidths: res.maxWidths,
+    };
   }
 
   /**

@@ -29,7 +29,9 @@ import {
     closeExtensionLibrary,
     openSoundRecorder,
     openConnectionModal,
-    openCustomExtensionModal
+    openCustomExtensionModal,
+    openSendScriptModal,
+    openCleanupProjectModal
 } from '../reducers/modals';
 import {activateCustomProcedures, deactivateCustomProcedures} from '../reducers/custom-procedures';
 import {setConnectionModalExtensionId} from '../reducers/connection-modal';
@@ -44,6 +46,7 @@ import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/tw-load-scratch-blocks-hoc.jsx';
 import {findTopBlock} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/tw-persistent-storage.js';
+import {setPendingSendScript} from '../lib/uli-send-script.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -166,6 +169,7 @@ class Blocks extends React.Component {
         );
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
         AddonHooks.blocklyWorkspace = this.workspace;
+        this.installUliContextMenu();
 
         // Register buttons under new callback keys for creating variables,
         // lists, and procedures from extensions.
@@ -229,6 +233,91 @@ class Blocks extends React.Component {
         }
 
         gentlyRequestPersistentStorage();
+    }
+    installUliContextMenu () {
+        const ScratchBlocks = this.ScratchBlocks;
+        if (!ScratchBlocks || !ScratchBlocks.ContextMenu) return;
+
+        ScratchBlocks.ContextMenu._uliContextMenuHandler = items => {
+            const ws = ScratchBlocks.getMainWorkspace ? ScratchBlocks.getMainWorkspace() : ScratchBlocks.mainWorkspace;
+            const gesture = ws && ws.currentGesture_;
+            if (!gesture || gesture.flyout_ || gesture.startBubble_) return items;
+
+            const vm = this.props.vm;
+            const isRu = Boolean(this.props.locale && this.props.locale.toLowerCase().startsWith('ru'));
+            const alreadyAdded = items.some(item => item && item._isUliContextItem);
+            if (alreadyAdded) return items;
+
+            const targetBlock = gesture.targetBlock_;
+            if (targetBlock && vm && vm.editingTarget && vm.runtime) {
+                const clickedBlock = targetBlock.isShadow && targetBlock.isShadow() ?
+                    (targetBlock.getParent() || targetBlock) :
+                    targetBlock;
+                const rootBlock = clickedBlock.getRootBlock ? clickedBlock.getRootBlock() : clickedBlock;
+                const hasOtherTargets = Array.isArray(vm.runtime.targets) && vm.runtime.targets.some(
+                    t => t && t.isOriginal && t.id !== vm.editingTarget.id
+                );
+
+                items.push({
+                    enabled: hasOtherTargets,
+                    text: isRu ? 'Отправить' : 'Send to sprites...',
+                    separator: true,
+                    _isUliContextItem: true,
+                    callback: () => {
+                        setPendingSendScript({
+                            sourceTargetId: vm.editingTarget.id,
+                            blockId: clickedBlock.id,
+                            rootBlockId: rootBlock.id
+                        });
+                        if (typeof this.props.onOpenSendScriptModal === 'function') {
+                            this.props.onOpenSendScriptModal();
+                        }
+                    }
+                });
+            } else if (!targetBlock) {
+                items.push({
+                    enabled: true,
+                    text: isRu ? 'Очистка кода во всех спрайтах...' : 'Clean up code (all sprites)...',
+                    separator: true,
+                    _isUliContextItem: true,
+                    callback: () => {
+                        if (typeof this.props.onOpenCleanupProjectModal === 'function') {
+                            this.props.onOpenCleanupProjectModal();
+                        }
+                    }
+                });
+            }
+            return items;
+        };
+
+        if (!ScratchBlocks.ContextMenu._uliPatched) {
+            ScratchBlocks.ContextMenu._uliPatched = true;
+            const oldShow = ScratchBlocks.ContextMenu.show;
+            ScratchBlocks.ContextMenu.show = function (event, items, rtl) {
+                if (typeof ScratchBlocks.ContextMenu._uliContextMenuHandler === 'function') {
+                    try {
+                        items = ScratchBlocks.ContextMenu._uliContextMenuHandler(items);
+                    } catch (e) {
+                        log.error('Error in UliBlock context menu handler:', e);
+                    }
+                }
+                oldShow.call(this, event, items, rtl);
+                const menuEl = ScratchBlocks.WidgetDiv && ScratchBlocks.WidgetDiv.DIV &&
+                    ScratchBlocks.WidgetDiv.DIV.firstChild;
+                if (menuEl && menuEl.children) {
+                    items.forEach((item, i) => {
+                        if (i !== 0 && item && item._isUliContextItem && item.separator) {
+                            const itemElt = menuEl.children[i];
+                            if (itemElt && !itemElt.style.borderTop) {
+                                itemElt.style.paddingTop = '2px';
+                                itemElt.classList.add('sa-blockly-menu-item-border');
+                                itemElt.style.borderTop = '1px solid var(--ui-black-transparent)';
+                            }
+                        }
+                    });
+                }
+            };
+        }
     }
     shouldComponentUpdate (nextProps, nextState) {
         return (
@@ -753,6 +842,8 @@ Blocks.propTypes = {
     onOpenConnectionModal: PropTypes.func,
     onOpenSoundRecorder: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
+    onOpenSendScriptModal: PropTypes.func,
+    onOpenCleanupProjectModal: PropTypes.func,
     reduxOnOpenCustomExtensionModal: PropTypes.func,
     onRequestCloseCustomProcedures: PropTypes.func,
     onRequestCloseExtensionLibrary: PropTypes.func,
@@ -827,6 +918,8 @@ const mapDispatchToProps = dispatch => ({
         dispatch(activateTab(SOUNDS_TAB_INDEX));
         dispatch(openSoundRecorder());
     },
+    onOpenSendScriptModal: () => dispatch(openSendScriptModal()),
+    onOpenCleanupProjectModal: () => dispatch(openCleanupProjectModal()),
     reduxOnOpenCustomExtensionModal: () => dispatch(openCustomExtensionModal()),
     onRequestCloseExtensionLibrary: () => {
         dispatch(closeExtensionLibrary());
