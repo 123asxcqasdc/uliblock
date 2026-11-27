@@ -126,13 +126,13 @@ const CleanupModalComponent = ({
                     <div className={styles.optionText}>
                         <span className={styles.optionTitle}>
                             {isRu ?
-                                'Выполнить «Очистить блоки +» во всех спрайтах (длинные скрипты направо)' :
-                                'Run "Clean up Blocks +" across all sprites (longest scripts to the right)'}
+                                'Выполнить «Очистить блоки +» во всех спрайтах (по 5 в колонке, длинные — направо)' :
+                                'Run "Clean up Blocks +" across all sprites (5 per column, long scripts right)'}
                         </span>
                         <span className={styles.optionDesc}>
                             {isRu ?
-                                'Упорядочивает колонки кода в каждом спрайте и на сцене, перенося самые длинные скрипты вправо.' :
-                                'Arranges code columns across every sprite and Stage, placing the longest scripts on the right.'}
+                                'Сортирует скрипты по длине и раскладывает по 5 в колонку, перенося достаточно длинные скрипты в последнюю колонку справа.' :
+                                'Sorts scripts by length into columns of 5, placing sufficiently long scripts in the last column on the right.'}
                         </span>
                     </div>
                 </label>

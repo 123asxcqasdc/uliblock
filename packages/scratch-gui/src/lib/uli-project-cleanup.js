@@ -164,6 +164,62 @@ const scanProjectCleanupStats = vm => {
     return stats;
 };
 
+const SCRIPTS_PER_COLUMN = 5;
+const LONG_SCRIPT_HEIGHT = 550;
+const LONG_SCRIPT_BLOCKS = 12;
+
+const countVerticalBlocks = block => {
+    if (!block || isBlockDisposed(block)) return 0;
+    const visited = new Set();
+    const stack = [block];
+    let count = 0;
+
+    while (stack.length > 0) {
+        const cur = stack.pop();
+        if (!cur || isBlockDisposed(cur)) continue;
+        const key = cur.id || cur;
+        if (visited.has(key)) continue;
+        visited.add(key);
+        count++;
+
+        try {
+            if (typeof cur.getNextBlock === 'function') {
+                const next = cur.getNextBlock();
+                if (next && !isBlockDisposed(next)) {
+                    stack.push(next);
+                }
+            }
+            const inputs = Array.isArray(cur.inputList) ? cur.inputList : [];
+            for (const input of inputs) {
+                const target = input && input.connection && typeof input.connection.targetBlock === 'function' ?
+                    input.connection.targetBlock() :
+                    null;
+                if (target && !isBlockDisposed(target) && !target.outputConnection && target.previousConnection) {
+                    stack.push(target);
+                }
+            }
+        } catch (_e) {
+            // ignore
+        }
+    }
+
+    return count;
+};
+
+const getScriptLengthMetrics = block => {
+    const hw = getBlockHeightWidthSafe(block);
+    const verticalBlocks = countVerticalBlocks(block);
+    return {
+        height: hw.height,
+        verticalBlocks
+    };
+};
+
+const isLongScript = metrics => (
+    metrics.height >= LONG_SCRIPT_HEIGHT ||
+    metrics.verticalBlocks >= LONG_SCRIPT_BLOCKS
+);
+
 const getOrderedTopBlockColumns = (workspace, {separateOrphans = true, longestRight = true} = {}) => {
     const topBlocks = workspace.getTopBlocks();
     const maxWidths = {};
@@ -191,82 +247,81 @@ const getOrderedTopBlockColumns = (workspace, {separateOrphans = true, longestRi
         }
     }
 
-    let cols = [];
-    const TOLERANCE = 256;
     const orphans = {x: -999999, count: 0, blocks: []};
+    const scriptItems = [];
 
     for (const topBlock of topBlocks) {
         if (isBlockDisposed(topBlock)) continue;
-        const position = topBlock.getRelativeToSurfaceXY();
+        const xy = topBlock.getRelativeToSurfaceXY();
 
         if (separateOrphans && topBlock.outputConnection) {
             orphans.blocks.push(topBlock);
             continue;
         }
 
-        let bestCol = null;
-        let bestError = TOLERANCE;
-        for (const col of cols) {
-            const err = Math.abs(position.x - col.x);
-            if (err < bestError) {
-                bestError = err;
-                bestCol = col;
-            }
-        }
-
-        if (bestCol) {
-            bestCol.x = (bestCol.x * bestCol.count + position.x) / ++bestCol.count;
-            bestCol.blocks.push(topBlock);
-        } else {
-            cols.push({x: position.x, count: 1, blocks: [topBlock]});
-        }
+        const metrics = getScriptLengthMetrics(topBlock);
+        scriptItems.push({
+            block: topBlock,
+            xy,
+            height: metrics.height,
+            verticalBlocks: metrics.verticalBlocks
+        });
     }
 
-    if (longestRight && cols.length === 1 && cols[0].blocks.length > 1) {
-        const heights = cols[0].blocks.map(b => getBlockHeightWidthSafe(b).height);
-        const minH = Math.min(...heights);
-        const maxH = Math.max(...heights);
-        if (maxH >= 260 && maxH > minH * 1.6) {
-            const threshold = minH + ((maxH - minH) * 0.55);
-            const shortBlocks = [];
-            const longBlocks = [];
-            for (const b of cols[0].blocks) {
-                if (getBlockHeightWidthSafe(b).height >= threshold) {
-                    longBlocks.push(b);
-                } else {
-                    shortBlocks.push(b);
-                }
-            }
-            if (shortBlocks.length > 0 && longBlocks.length > 0) {
-                cols = [
-                    {x: cols[0].x, count: shortBlocks.length, blocks: shortBlocks},
-                    {x: cols[0].x + 500, count: longBlocks.length, blocks: longBlocks}
-                ];
-            }
-        }
-    }
+    const compareByLength = (a, b) => (
+        (a.height - b.height) ||
+        (a.verticalBlocks - b.verticalBlocks) ||
+        (a.xy.y - b.xy.y) ||
+        (a.xy.x - b.xy.x)
+    );
 
-    for (const col of cols) {
-        col.blocks.sort((a, b) => a.getRelativeToSurfaceXY().y - b.getRelativeToSurfaceXY().y);
-        let maxHeight = 0;
-        let totalHeight = 0;
-        for (const b of col.blocks) {
-            const h = getBlockHeightWidthSafe(b).height;
-            if (h > maxHeight) maxHeight = h;
-            totalHeight += h;
-        }
-        col.maxHeight = maxHeight;
-        col.totalHeight = totalHeight;
-    }
+    const compareByPosition = (a, b) => (
+        (a.xy.x - b.xy.x) ||
+        (a.xy.y - b.xy.y)
+    );
+
+    const cols = [];
 
     if (longestRight) {
-        cols.sort((a, b) => (
-            (a.maxHeight - b.maxHeight) ||
-            (a.totalHeight - b.totalHeight) ||
-            (a.x - b.x)
-        ));
+        const normalItems = [];
+        const longItems = [];
+        for (const item of scriptItems) {
+            if (isLongScript(item)) {
+                longItems.push(item);
+            } else {
+                normalItems.push(item);
+            }
+        }
+
+        normalItems.sort(compareByLength);
+        longItems.sort(compareByLength);
+
+        for (let i = 0; i < normalItems.length; i += SCRIPTS_PER_COLUMN) {
+            const chunk = normalItems.slice(i, i + SCRIPTS_PER_COLUMN);
+            cols.push({
+                x: cols.length,
+                count: chunk.length,
+                blocks: chunk.map(item => item.block)
+            });
+        }
+
+        if (longItems.length > 0) {
+            cols.push({
+                x: cols.length,
+                count: longItems.length,
+                blocks: longItems.map(item => item.block)
+            });
+        }
     } else {
-        cols.sort((a, b) => a.x - b.x);
+        const sortedItems = scriptItems.slice().sort(compareByPosition);
+        for (let i = 0; i < sortedItems.length; i += SCRIPTS_PER_COLUMN) {
+            const chunk = sortedItems.slice(i, i + SCRIPTS_PER_COLUMN);
+            cols.push({
+                x: cols.length,
+                count: chunk.length,
+                blocks: chunk.map(item => item.block)
+            });
+        }
     }
 
     return {cols, orphans, maxWidths};
