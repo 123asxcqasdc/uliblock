@@ -14,7 +14,9 @@ const SOURCE_ORDER = [
   'turbowarp-cn',
   'bluedome77',
   'scrandled',
-  'crispstrobe'
+  'crispstrobe',
+  'electramod',
+  'gaia'
 ];
 
 const SOURCE_EMOJI = {
@@ -29,7 +31,9 @@ const SOURCE_EMOJI = {
   'snail-ide': '🐌',
   dashblocks: '🔥',
   scrandled: '🎲',
-  crispstrobe: '🧱'
+  crispstrobe: '🧱',
+  electramod: '⚡',
+  gaia: '🐈'
 };
 
 const SOURCE_LABELS = {
@@ -44,7 +48,9 @@ const SOURCE_LABELS = {
   'snail-ide': 'Snail IDE',
   dashblocks: 'DashBlocks',
   scrandled: 'scrandled',
-  crispstrobe: 'CrispStrobe'
+  crispstrobe: 'CrispStrobe',
+  electramod: 'ElectraMod',
+  gaia: 'Gaia’s Gallery'
 };
 
 const SOURCE_URLS = {
@@ -59,7 +65,14 @@ const SOURCE_URLS = {
   dashblocks: 'https://dashblocks.org/extensions/',
   'snail-ide': 'https://snail-ide.js.org/community-extensions/',
   scrandled: 'https://scrandled.vercel.app/',
-  crispstrobe: 'https://crispstrobe.github.io/extensions/'
+  crispstrobe: 'https://crispstrobe.github.io/extensions/',
+  electramod: 'https://electramod-extensions-gallery.vercel.app/',
+  gaia: 'https://github.com/gaiawindwave90/gaias-gallery'
+};
+
+const getSourceRank = (source) => {
+  const idx = SOURCE_ORDER.indexOf(source);
+  return idx === -1 ? 999 : idx;
 };
 
 const GALLERY_URL = 'https://123asxcqasdc.github.io/turbowarp-extensions/';
@@ -702,16 +715,18 @@ class CommunityGalleryModal extends React.Component {
               >
                 ✅ официальная · {officialCount}
               </button>
-              {SOURCE_ORDER.filter((s) => s !== 'official' && exclusiveCounts[s]).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={`${styles.chip} ${activeSource === s ? styles.chipActive : ''}`}
-                  onClick={() => this.setState({activeSource: s})}
-                >
-                  {`${SOURCE_EMOJI[s] || '🐌'} ${SOURCE_LABELS[s] || s} · ${exclusiveCounts[s]}`}
-                </button>
-              ))}
+              {SOURCE_ORDER.concat(Object.keys(exclusiveCounts).filter((s) => !SOURCE_ORDER.includes(s)))
+                .filter((s) => s !== 'official' && exclusiveCounts[s])
+                .map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`${styles.chip} ${activeSource === s ? styles.chipActive : ''}`}
+                    onClick={() => this.setState({activeSource: s})}
+                  >
+                    {`${SOURCE_EMOJI[s] || '🐌'} ${SOURCE_LABELS[s] || s} · ${exclusiveCounts[s]}`}
+                  </button>
+                ))}
               {multiCount > 0 ? (
                 <button
                   type="button"
@@ -740,7 +755,7 @@ class CommunityGalleryModal extends React.Component {
                 for (const v of (ext.variants || [])) {
                   if (!seenSources.includes(v.source)) seenSources.push(v.source);
                 }
-                seenSources.sort((a, b) => SOURCE_ORDER.indexOf(a) - SOURCE_ORDER.indexOf(b));
+                seenSources.sort((a, b) => getSourceRank(a) - getSourceRank(b));
                 const authors = getExtensionAuthors(ext);
                 const hasCachedCommunity = (ext.variants || []).some((v) => this.isVariantInCommunityCache(v));
                 const hasOfficial = (ext.variants || []).some((v) => v.source === 'official');
@@ -903,7 +918,7 @@ class CommunityGalleryModal extends React.Component {
                 </div>
                 {(pickerExt.variants || [])
                   .slice()
-                  .sort((a, b) => SOURCE_ORDER.indexOf(a.source) - SOURCE_ORDER.indexOf(b.source))
+                  .sort((a, b) => getSourceRank(a.source) - getSourceRank(b.source))
                   .map((v, i) => {
                     const authorInfo = getVariantAuthor(v, pickerExt);
                     const sourceLabel = v.source_label || SOURCE_LABELS[v.source] || v.source;
