@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-UliBlock .deb Online Installer (packaged as a lightweight AppImage).
+UliBlock Linux Online Installer (packaged as a lightweight AppImage).
 
-Downloads the official UliBlock .deb package from GitHub Releases and installs it
-via pkexec apt-get install (with dpkg + apt-get -f fallback), displaying a native
-GTK3 graphical installer wizard (falling back to zenity / kdialog / terminal).
+Automatically detects Debian/Ubuntu (.deb) or Fedora/RHEL/openSUSE (.rpm),
+downloads the official UliBlock package from GitHub Releases, and installs it
+via pkexec (apt-get / dnf / zypper / rpm), displaying a native GTK3 wizard
+(falling back to zenity / CLI).
 """
 
 import json
@@ -41,17 +42,79 @@ def find_icon_path():
     return None
 
 
-def detect_arch():
+def read_os_release():
+    info = {}
+    try:
+        with open("/etc/os-release", "r", encoding="utf-8", errors="ignore") as fp:
+            for line in fp:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                info[k.strip()] = v.strip().strip('"').strip("'").lower()
+    except OSError:
+        pass
+    return info
+
+
+def detect_package_format(forced_format=None):
+    if forced_format in ("deb", "rpm"):
+        return forced_format
+
+    os_rel = read_os_release()
+    tokens = set((os_rel.get("ID", "") + " " + os_rel.get("ID_LIKE", "")).split())
+
+    rpm_distros = {"fedora", "rhel", "centos", "rocky", "almalinux", "nobara", "ol", "opensuse", "opensuse-leap", "opensuse-tumbleweed", "suse", "sles", "mageia"}
+    deb_distros = {"debian", "ubuntu", "linuxmint", "pop", "zorin", "elementary", "kali", "raspbian", "neon"}
+
+    has_rpm = bool(shutil.which("rpm") or shutil.which("dnf") or shutil.which("zypper") or shutil.which("yum"))
+    has_deb = bool(shutil.which("dpkg-query") or shutil.which("apt-get") or shutil.which("dpkg"))
+
+    if tokens & rpm_distros and has_rpm:
+        return "rpm"
+    if tokens & deb_distros and has_deb:
+        return "deb"
+
+    if shutil.which("apt-get") and shutil.which("dpkg-query"):
+        return "deb"
+    if (shutil.which("dnf") or shutil.which("zypper") or shutil.which("yum")) and shutil.which("rpm"):
+        return "rpm"
+    if has_deb:
+        return "deb"
+    if has_rpm:
+        return "rpm"
+
+    raise RuntimeError(
+        "Не удалось определить пакетный менеджер (.deb или .rpm) в вашей системе.\n"
+        "Используйте портативную сборку UliBlock-linux-*.AppImage."
+    )
+
+
+def detect_arch(pkg_format="deb"):
     machine = platform.machine().lower()
     if machine in ("x86_64", "amd64"):
+        if pkg_format == "rpm":
+            return "x86_64", ("x86_64", "x64", "amd64")
         return "amd64", ("amd64", "x64")
     if machine in ("aarch64", "arm64"):
+        if pkg_format == "rpm":
+            return "aarch64", ("aarch64", "arm64")
         return "arm64", ("arm64", "aarch64")
     raise RuntimeError(f"Неподдерживаемая архитектура процессора: {machine}")
 
 
-def get_installed_version():
+def get_installed_version(pkg_format="deb"):
     try:
+        if pkg_format == "rpm":
+            out = subprocess.check_output(
+                ["rpm", "-q", "--queryformat", "%{VERSION}", "uliblock"],
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).strip()
+            if out and "not installed" not in out.lower():
+                return out
+            return None
+
         out = subprocess.check_output(
             ["dpkg-query", "-W", "-f=${Status}\t${Version}", "uliblock"],
             stderr=subprocess.DEVNULL,
@@ -70,21 +133,21 @@ def fetch_json(url, timeout=20):
         url,
         headers={
             "Accept": "application/vnd.github+json",
-            "User-Agent": f"UliBlock-Deb-Installer/{DEFAULT_VERSION}",
+            "User-Agent": f"UliBlock-Linux-Installer/{DEFAULT_VERSION}",
         },
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
-def resolve_deb_release(preferred_tag=None):
+def resolve_package_release(pkg_format="deb", preferred_tag=None):
     """
-    Returns dict: {tag, name, url, size, release_url}.
+    Returns dict: {tag, name, url, size, release_url, pkg_format, pkg_arch}.
     Queries GitHub Releases API (latest first, or preferred tag if specified).
     """
-    deb_arch, arch_aliases = detect_arch()
+    pkg_arch, arch_aliases = detect_arch(pkg_format)
     arch_regex = "|".join(re.escape(a) for a in arch_aliases)
-    pattern = re.compile(rf"UliBlock.*(?:{arch_regex}).*\.deb$", re.IGNORECASE)
+    pattern = re.compile(rf"UliBlock.*(?:{arch_regex}).*\.{re.escape(pkg_format)}$", re.IGNORECASE)
 
     endpoints = []
     if preferred_tag:
@@ -109,6 +172,8 @@ def resolve_deb_release(preferred_tag=None):
                             "url": asset["browser_download_url"],
                             "size": int(asset.get("size") or 0),
                             "release_url": rel.get("html_url") or f"https://github.com/{REPO}/releases",
+                            "pkg_format": pkg_format,
+                            "pkg_arch": pkg_arch,
                         }
         except Exception as exc:
             last_err = exc
@@ -122,7 +187,7 @@ def resolve_deb_release(preferred_tag=None):
             req = urllib.request.Request(
                 f"https://github.com/{REPO}/releases/latest",
                 method="HEAD",
-                headers={"User-Agent": f"UliBlock-Deb-Installer/{DEFAULT_VERSION}"},
+                headers={"User-Agent": f"UliBlock-Linux-Installer/{DEFAULT_VERSION}"},
             )
             with urllib.request.urlopen(req, timeout=15) as resp:
                 final_url = resp.geturl()
@@ -138,13 +203,13 @@ def resolve_deb_release(preferred_tag=None):
     for tag in candidate_tags:
         ver = tag.lstrip("v")
         for alias in arch_aliases:
-            candidate_name = f"UliBlock-linux-{alias}-{ver}.deb"
+            candidate_name = f"UliBlock-linux-{alias}-{ver}.{pkg_format}"
             candidate_url = f"https://github.com/{REPO}/releases/download/{tag}/{candidate_name}"
             try:
                 req = urllib.request.Request(
                     candidate_url,
                     method="HEAD",
-                    headers={"User-Agent": f"UliBlock-Deb-Installer/{ver}"},
+                    headers={"User-Agent": f"UliBlock-Linux-Installer/{ver}"},
                 )
                 with urllib.request.urlopen(req, timeout=15) as resp:
                     size = int(resp.headers.get("Content-Length") or 0)
@@ -154,21 +219,23 @@ def resolve_deb_release(preferred_tag=None):
                         "url": candidate_url,
                         "size": size,
                         "release_url": f"https://github.com/{REPO}/releases/tag/{tag}",
+                        "pkg_format": pkg_format,
+                        "pkg_arch": pkg_arch,
                     }
             except Exception as exc:
                 last_err = exc
 
     raise RuntimeError(
-        f"Не удалось найти .deb пакет UliBlock для архитектуры {deb_arch} в репозитории {REPO}.\n"
+        f"Не удалось найти .{pkg_format} пакет UliBlock для архитектуры {pkg_arch} в репозитории {REPO}.\n"
         f"Проверьте подключение к интернету и наличие релиза на GitHub.\n"
         f"Детали: {last_err}"
     )
 
 
-def download_deb(url, dest_path, expected_size=0, progress_cb=None, cancel_event=None):
+def download_package(url, dest_path, pkg_format="deb", expected_size=0, progress_cb=None, cancel_event=None):
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": f"UliBlock-Deb-Installer/{DEFAULT_VERSION}"},
+        headers={"User-Agent": f"UliBlock-Linux-Installer/{DEFAULT_VERSION}"},
     )
     tmp_path = dest_path + ".part"
     if os.path.exists(tmp_path):
@@ -198,51 +265,68 @@ def download_deb(url, dest_path, expected_size=0, progress_cb=None, cancel_event
                     progress_cb(downloaded, total, speed)
 
     if not os.path.isfile(tmp_path) or os.path.getsize(tmp_path) < 1024:
-        raise RuntimeError("Скачанный .deb файл пуст или повреждён.")
+        raise RuntimeError(f"Скачанный .{pkg_format} файл пуст или повреждён.")
 
-    # Verify it is a real Debian archive (ar magic header)
     with open(tmp_path, "rb") as fp:
         magic = fp.read(8)
-    if magic != b"!<arch>\n":
+    if pkg_format == "deb" and magic != b"!<arch>\n":
         os.remove(tmp_path)
         raise RuntimeError("Скачанный файл не является корректным .deb пакетом.")
+    if pkg_format == "rpm" and magic[:4] != b"\xed\xab\xee\xdb":
+        os.remove(tmp_path)
+        raise RuntimeError("Скачанный файл не является корректным .rpm пакетом.")
 
     os.replace(tmp_path, dest_path)
 
 
-def install_deb_package(deb_path, log_cb=None):
+def install_package(pkg_path, pkg_format="deb", log_cb=None):
     """
-    Installs the downloaded .deb package with root privileges using pkexec (polkit GUI)
-    or sudo if running in a terminal without polkit.
-    Uses `apt-get install -y <deb_path>` so dependencies are automatically resolved.
+    Installs the downloaded .deb or .rpm package with root privileges using pkexec
+    (or sudo if running in a terminal without polkit).
     """
-    os.chmod(deb_path, 0o644)
-    parent_dir = os.path.dirname(deb_path)
+    os.chmod(pkg_path, 0o644)
+    parent_dir = os.path.dirname(pkg_path)
     try:
         os.chmod(parent_dir, 0o755)
     except OSError:
         pass
 
-    install_script = (
-        'set -e; '
-        'export DEBIAN_FRONTEND=noninteractive; '
-        'if command -v apt-get >/dev/null 2>&1; then '
-        '  apt-get install -y --allow-downgrades "$1" || (dpkg -i "$1" && apt-get install -f -y); '
-        'else '
-        '  dpkg -i "$1"; '
-        'fi'
-    )
+    if pkg_format == "rpm":
+        install_script = (
+            'set -e; '
+            'if command -v dnf >/dev/null 2>&1; then '
+            '  dnf install -y --nogpgcheck "$1" || dnf reinstall -y --nogpgcheck "$1" || rpm -Uvh --replacepkgs "$1"; '
+            'elif command -v zypper >/dev/null 2>&1; then '
+            '  zypper --non-interactive install --allow-unsigned-rpm "$1" || rpm -Uvh --replacepkgs "$1"; '
+            'elif command -v yum >/dev/null 2>&1; then '
+            '  yum localinstall -y --nogpgcheck "$1" || rpm -Uvh --replacepkgs "$1"; '
+            'else '
+            '  rpm -Uvh --replacepkgs "$1"; '
+            'fi'
+        )
+        manual_hint = f"sudo dnf install {pkg_path}"
+    else:
+        install_script = (
+            'set -e; '
+            'export DEBIAN_FRONTEND=noninteractive; '
+            'if command -v apt-get >/dev/null 2>&1; then '
+            '  apt-get install -y --allow-downgrades "$1" || (dpkg -i "$1" && apt-get install -f -y); '
+            'else '
+            '  dpkg -i "$1"; '
+            'fi'
+        )
+        manual_hint = f"sudo apt install {pkg_path}"
 
     if os.geteuid() == 0:
-        cmd = ["sh", "-c", install_script, "_", deb_path]
+        cmd = ["sh", "-c", install_script, "_", pkg_path]
     elif shutil.which("pkexec"):
-        cmd = ["pkexec", "sh", "-c", install_script, "_", deb_path]
+        cmd = ["pkexec", "sh", "-c", install_script, "_", pkg_path]
     elif shutil.which("sudo"):
-        cmd = ["sudo", "sh", "-c", install_script, "_", deb_path]
+        cmd = ["sudo", "sh", "-c", install_script, "_", pkg_path]
     else:
         raise RuntimeError(
-            "Не найден pkexec или sudo для установки .deb пакета.\n"
-            f"Вы можете установить скачанный пакет вручную:\nsudo apt install {deb_path}"
+            f"Не найден pkexec или sudo для установки .{pkg_format} пакета.\n"
+            f"Вы можете установить скачанный пакет вручную:\n{manual_hint}"
         )
 
     proc = subprocess.Popen(
@@ -309,7 +393,7 @@ def wait_for_pid_exit(pid, timeout=6.0):
         time.sleep(0.2)
 
 
-def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
+def run_gtk_gui(pkg_format="deb", preferred_tag=None, auto_install=False, wait_pid=None):
     import gi
 
     gi.require_version("Gtk", "3.0")
@@ -398,7 +482,7 @@ def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
 
     class InstallerWindow(Gtk.Window):
         def __init__(self):
-            super().__init__(title="Установщик UliBlock (.deb)")
+            super().__init__(title=f"Установщик UliBlock (.{pkg_format})")
             self.set_default_size(520, 420)
             self.set_position(Gtk.WindowPosition.CENTER)
             self.set_resizable(False)
@@ -434,7 +518,7 @@ def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
             title_lbl = Gtk.Label(label="Установщик UliBlock")
             title_lbl.set_halign(Gtk.Align.START)
             title_lbl.get_style_context().add_class("uli-title")
-            sub_lbl = Gtk.Label(label="Загрузка и установка официального .deb пакета в систему")
+            sub_lbl = Gtk.Label(label=f"Загрузка и установка официального .{pkg_format} пакета в систему")
             sub_lbl.set_halign(Gtk.Align.START)
             sub_lbl.get_style_context().add_class("uli-subtitle")
             title_box.pack_start(title_lbl, False, False, 0)
@@ -515,14 +599,14 @@ def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
 
         def load_release_info(self):
             try:
-                deb_arch, _ = detect_arch()
-                installed = get_installed_version()
-                info = resolve_deb_release(preferred_tag)
+                pkg_arch, _ = detect_arch(pkg_format)
+                installed = get_installed_version(pkg_format)
+                info = resolve_package_release(pkg_format, preferred_tag)
                 self.release_info = info
 
                 size_text = format_mb(info["size"]) if info["size"] else "размер уточняется"
                 lines = [
-                    f"<b>Версия для установки:</b> UliBlock {info['tag']} ({deb_arch})",
+                    f"<b>Версия для установки:</b> UliBlock {info['tag']} (.{pkg_format}, {pkg_arch})",
                     f"<b>Пакет:</b> {info['name']} ({size_text})",
                     f"<b>Источник:</b> GitHub Releases ({REPO})",
                 ]
@@ -547,7 +631,7 @@ def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
                         self.start_install()
                     else:
                         self.status_label.set_text(
-                            "Нажмите кнопку ниже, чтобы скачать .deb пакет и установить UliBlock в систему."
+                            f"Нажмите кнопку ниже, чтобы скачать .{pkg_format} пакет и установить UliBlock в систему."
                         )
                         self.progress.set_text("Готово к установке")
                         self.action_btn.set_sensitive(True)
@@ -590,7 +674,7 @@ def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
 
         def run_install_worker(self):
             info = self.release_info
-            deb_path = os.path.join(self.temp_dir, info["name"])
+            pkg_path = os.path.join(self.temp_dir, info["name"])
             pulse_id = None
 
             def stop_pulse():
@@ -613,15 +697,16 @@ def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
                         GLib.idle_add(self.progress.pulse)
                         GLib.idle_add(self.progress.set_text, f"Загружено {format_mb(done)}")
 
-                download_deb(
+                download_package(
                     info["url"],
-                    deb_path,
+                    pkg_path,
+                    pkg_format=pkg_format,
                     expected_size=info["size"],
                     progress_cb=on_progress,
                     cancel_event=self.cancel_event,
                 )
 
-                self.append_log(f"Пакет загружен: {deb_path}")
+                self.append_log(f"Пакет загружен: {pkg_path}")
 
                 if wait_pid:
                     wait_for_pid_exit(wait_pid)
@@ -629,7 +714,7 @@ def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
                 def _start_install_ui():
                     nonlocal pulse_id
                     self.status_label.set_text(
-                        "Шаг 2/2: Установка .deb пакета (введите пароль администратора в системном окне)..."
+                        f"Шаг 2/2: Установка .{pkg_format} пакета (введите пароль администратора в системном окне)..."
                     )
                     self.progress.set_text("Установка пакета в систему...")
                     self.expander.set_expanded(True)
@@ -639,7 +724,7 @@ def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
 
                 GLib.idle_add(_start_install_ui)
 
-                install_deb_package(deb_path, log_cb=self.append_log)
+                install_package(pkg_path, pkg_format=pkg_format, log_cb=self.append_log)
 
                 def _done():
                     stop_pulse()
@@ -717,7 +802,7 @@ def run_gtk_gui(preferred_tag=None, auto_install=False, wait_pid=None):
     Gtk.main()
 
 
-def run_cli_or_zenity(preferred_tag=None, auto_install=False, wait_pid=None):
+def run_cli_or_zenity(pkg_format="deb", preferred_tag=None, auto_install=False, wait_pid=None):
     has_gui = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
     use_zenity = has_gui and bool(shutil.which("zenity"))
 
@@ -730,7 +815,7 @@ def run_cli_or_zenity(preferred_tag=None, auto_install=False, wait_pid=None):
             )
 
     try:
-        info = resolve_deb_release(preferred_tag)
+        info = resolve_package_release(pkg_format, preferred_tag)
     except Exception as exc:
         notify_error(str(exc))
         sys.exit(1)
@@ -753,7 +838,7 @@ def run_cli_or_zenity(preferred_tag=None, auto_install=False, wait_pid=None):
 
     temp_dir = tempfile.mkdtemp(prefix="uliblock-installer-")
     try:
-        deb_path = os.path.join(temp_dir, info["name"])
+        pkg_path = os.path.join(temp_dir, info["name"])
         print(f"Загрузка {info['name']} ({info['url']})...")
 
         if use_zenity:
@@ -785,7 +870,7 @@ def run_cli_or_zenity(preferred_tag=None, auto_install=False, wait_pid=None):
                     except Exception:
                         pass
 
-            download_deb(info["url"], deb_path, info["size"], progress_cb=zprog, cancel_event=cancel_ev)
+            download_package(info["url"], pkg_path, pkg_format=pkg_format, expected_size=info["size"], progress_cb=zprog, cancel_event=cancel_ev)
             try:
                 zproc.stdin.write("100\n")
                 zproc.stdin.close()
@@ -801,14 +886,14 @@ def run_cli_or_zenity(preferred_tag=None, auto_install=False, wait_pid=None):
                     sys.stdout.write(f"\rЗагружено: {format_mb(done)}")
                 sys.stdout.flush()
 
-            download_deb(info["url"], deb_path, info["size"], progress_cb=cprog)
+            download_package(info["url"], pkg_path, pkg_format=pkg_format, expected_size=info["size"], progress_cb=cprog)
             print()
 
         if wait_pid:
             wait_for_pid_exit(wait_pid)
 
-        print("Установка .deb пакета (может потребоваться пароль администратора)...")
-        install_deb_package(deb_path, log_cb=print)
+        print(f"Установка .{pkg_format} пакета (может потребоваться пароль администратора)...")
+        install_package(pkg_path, pkg_format=pkg_format, log_cb=print)
 
         msg = f"UliBlock {info['tag']} успешно установлен!"
         print(msg)
@@ -839,6 +924,7 @@ def run_cli_or_zenity(preferred_tag=None, auto_install=False, wait_pid=None):
 def main():
     args = sys.argv[1:]
     preferred_tag = None
+    forced_format = None
     force_cli = False
     auto_install = False
     wait_pid = None
@@ -847,11 +933,16 @@ def main():
     while i < len(args):
         arg = args[i]
         if arg in ("--version", "-v"):
-            deb_arch, _ = detect_arch()
-            print(f"UliBlock .deb Installer v{DEFAULT_VERSION} ({deb_arch})")
+            fmt = detect_package_format(forced_format)
+            pkg_arch, _ = detect_arch(fmt)
+            print(f"UliBlock Linux Installer v{DEFAULT_VERSION} (.{fmt}, {pkg_arch})")
             return
         if arg == "--cli":
             force_cli = True
+        elif arg == "--rpm":
+            forced_format = "rpm"
+        elif arg == "--deb":
+            forced_format = "deb"
         elif arg in ("-autoupdate", "--autoupdate", "--auto", "--auto-update"):
             auto_install = True
         elif arg == "--tag" and i + 1 < len(args):
@@ -865,15 +956,21 @@ def main():
                 wait_pid = None
         i += 1
 
+    try:
+        pkg_format = detect_package_format(forced_format)
+    except Exception as exc:
+        print(f"Ошибка: {exc}", file=sys.stderr)
+        sys.exit(1)
+
     has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
     if has_display and not force_cli:
         try:
-            run_gtk_gui(preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid)
+            run_gtk_gui(pkg_format=pkg_format, preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid)
             return
         except Exception as exc:
             print(f"GTK3 недоступен ({exc}), переключение на zenity/CLI...", file=sys.stderr)
 
-    run_cli_or_zenity(preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid)
+    run_cli_or_zenity(pkg_format=pkg_format, preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid)
 
 
 if __name__ == "__main__":

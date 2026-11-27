@@ -42,8 +42,8 @@ cat > "${APPDIR}/ru.c6t.uli.uliblock.installer.desktop" <<'EOF'
 [Desktop Entry]
 Name=UliBlock Installer
 Name[ru]=Установщик UliBlock
-Comment=Download and install UliBlock (.deb) from GitHub Releases
-Comment[ru]=Загрузка и установка .deb пакета UliBlock с GitHub Releases
+Comment=Download and install UliBlock (.deb / .rpm) from GitHub Releases
+Comment[ru]=Загрузка и установка .deb / .rpm пакета UliBlock с GitHub Releases
 Exec=uliblock-deb-installer
 Terminal=false
 Type=Application

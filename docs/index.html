@@ -525,13 +525,13 @@
 
       <div class="hero">
         <div>
-          <div class="hero-badge">🐌 Версия v1.3.1 · Windows &amp; Linux · GPL-3.0</div>
+          <div class="hero-badge">🐌 Версия v1.3.2 · Windows &amp; Linux · GPL-3.0</div>
           <h1>Лёгкий и быстрый редактор для проектов Scratch</h1>
           <p>
             <strong>UliBlock</strong> — открытый форк TurboWarp Desktop с фирменным зелёным оформлением, встроенной галереей расширений сообщества с офлайн-кэшем, графическим редактором PenguinMod-Paint, встроенным Uli Packager и проводником проекта SB3 Explorer.
           </p>
           <div class="hero-actions">
-            <a class="btn-hero" href="#download">⬇ Скачать UliBlock v1.3.1</a>
+            <a class="btn-hero" href="#download">⬇ Скачать UliBlock v1.3.2</a>
             <a class="btn-hero-secondary" href="https://123asxcqasdc.github.io/turbowarp-extensions/" target="_blank" rel="noreferrer">🧩 Галерея расширений</a>
           </div>
         </div>
@@ -546,7 +546,7 @@
   <main>
     <section id="download">
       <div class="container">
-        <h2>Скачать UliBlock v1.3.1</h2>
+        <h2>Скачать UliBlock v1.3.2</h2>
         <p class="section-sub">Выберите операционную систему — мы подберём самый удобный вариант установки.</p>
 
         <div class="download-card">
@@ -565,14 +565,14 @@
               <div class="download-result-header">
                 <div class="download-meta">
                   <h3>MSI-установщик UliBlock для Windows (x64)</h3>
-                  <p>Windows 10 / 11 (64-bit) · установка для всех пользователей со стандартным прогресс-баром MSI · <code>UliBlock-Setup-1.3.1-x64.msi</code></p>
+                  <p>Windows 10 / 11 (64-bit) · установка для всех пользователей со стандартным прогресс-баром MSI · <code>UliBlock-Setup-1.3.2-x64.msi</code></p>
                 </div>
-                <a class="btn-download" id="dl-windows" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.3.1/UliBlock-Setup-1.3.1-x64.msi">
+                <a class="btn-download" id="dl-windows" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.3.2/UliBlock-Setup-1.3.2-x64.msi">
                   ⬇ Скачать для Windows (.msi)
                 </a>
               </div>
               <ol class="install-steps">
-                <li>Скачайте и запустите <code>UliBlock-Setup-1.3.1-x64.msi</code>.</li>
+                <li>Скачайте и запустите <code>UliBlock-Setup-1.3.2-x64.msi</code>.</li>
                 <li>Установщик автоматически поставит UliBlock для всех пользователей (в <code>Program Files</code>) со стандартным окном прогресса Windows Installer — без лишних вопросов и предупреждений, а затем сразу запустит редактор.</li>
                 <li>Ярлыки и ассоциации файлов <code>.sb3</code> / <code>.sb2</code> / <code>.sb</code> настроятся автоматически.</li>
               </ol>
@@ -600,30 +600,34 @@
               <div class="pill-row">
                 <button type="button" class="pill-btn active" data-distro="debian">
                   Debian / Ubuntu
-                  <small>Ubuntu, Debian, Linux Mint, Pop!_OS, Zorin и производные</small>
+                  <small>Ubuntu, Debian, Linux Mint, Pop!_OS, Zorin и производные (.deb)</small>
+                </button>
+                <button type="button" class="pill-btn" data-distro="fedora">
+                  Fedora / RHEL / openSUSE
+                  <small>Fedora, Nobara, RHEL, Rocky, openSUSE (.rpm)</small>
                 </button>
                 <button type="button" class="pill-btn" data-distro="other">
                   Другой дистрибутив Linux
-                  <small>Arch, Fedora, openSUSE, Manjaro и т.д. (портативный AppImage)</small>
+                  <small>Arch, Manjaro и т.д. (портативный AppImage)</small>
                 </button>
               </div>
             </div>
 
-            <!-- Debian/Ubuntu result: ONLY lightweight AppImage installer -->
+            <!-- Debian/Ubuntu & Fedora result: lightweight AppImage installer -->
             <div id="linux-result-debian" class="download-result">
               <div class="download-result-header">
                 <div class="download-meta">
                   <h3 id="deb-inst-title">Установщик UliBlock для Debian / Ubuntu (x64)</h3>
                   <p id="deb-inst-desc">
-                    Лёгкий графический установщик (~1 МБ): сам скачает и установит пакет в систему без команд в терминале · <code id="deb-inst-file">UliBlock-Installer-linux-x64-1.3.1.AppImage</code>
+                    Лёгкий графический установщик (~1 МБ): сам определит систему, скачает и установит пакет (.deb / .rpm) без команд в терминале · <code id="deb-inst-file">UliBlock-Installer-linux-x64-1.3.2.AppImage</code>
                   </p>
                 </div>
-                <a class="btn-download" id="dl-linux-installer" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.3.1/UliBlock-Installer-linux-x64-1.3.1.AppImage">
+                <a class="btn-download" id="dl-linux-installer" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.3.2/UliBlock-Installer-linux-x64-1.3.2.AppImage">
                   ⬇ Скачать установщик (~1 МБ)
                 </a>
               </div>
               <ol class="install-steps">
-                <li>Скачайте файл <code id="deb-inst-step-file">UliBlock-Installer-linux-x64-1.3.1.AppImage</code>.</li>
+                <li>Скачайте файл <code id="deb-inst-step-file">UliBlock-Installer-linux-x64-1.3.2.AppImage</code>.</li>
                 <li>Откройте <strong>Свойства → Права</strong> и включите <strong>«Разрешить выполнение файла как программы»</strong> (или выполните <code>chmod +x UliBlock-Installer-*.AppImage</code>).</li>
                 <li>Запустите файл двойным кликом и нажмите <strong>«Установить UliBlock»</strong> — установщик автоматически загрузит и установит UliBlock с иконкой в меню приложений и поддержкой <code>.sb3</code>!</li>
               </ol>
@@ -635,10 +639,10 @@
                 <div class="download-meta">
                   <h3 id="other-appimage-title">Портативный UliBlock AppImage (x64)</h3>
                   <p id="other-appimage-desc">
-                    Полная офлайн-сборка для любого дистрибутива Linux · <code id="other-appimage-file">UliBlock-linux-x86_64-1.3.1.AppImage</code>
+                    Полная офлайн-сборка для любого дистрибутива Linux · <code id="other-appimage-file">UliBlock-linux-x86_64-1.3.2.AppImage</code>
                   </p>
                 </div>
-                <a class="btn-download" id="dl-linux-appimage" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.3.1/UliBlock-linux-x86_64-1.3.1.AppImage">
+                <a class="btn-download" id="dl-linux-appimage" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.3.2/UliBlock-linux-x86_64-1.3.2.AppImage">
                   ⬇ Скачать AppImage
                 </a>
               </div>
@@ -650,7 +654,7 @@
           </div>
 
           <p style="margin: 18px 0 0; font-size: 13.5px; color: var(--text-muted);">
-            Все релизы и исходный код доступны на <a href="https://github.com/123asxcqasdc/uliblock/releases/tag/v1.3.1" target="_blank" rel="noreferrer">GitHub Releases</a>.
+            Все релизы и исходный код доступны на <a href="https://github.com/123asxcqasdc/uliblock/releases/tag/v1.3.2" target="_blank" rel="noreferrer">GitHub Releases</a>.
           </p>
         </div>
 
@@ -725,6 +729,15 @@
       <div class="container">
         <h2>История изменений</h2>
         <p class="section-sub">Полный технический журнал отличий от upstream доступен в <a href="https://github.com/123asxcqasdc/uliblock/blob/main/CHANGES.md" target="_blank" rel="noreferrer">CHANGES.md</a>.</p>
+
+        <div class="changelog-item">
+          <h3><span class="ver-pill">v1.3.2</span> Поддержка .rpm для Fedora, тихое автообновление на Windows без консоли и отказ от .exe</h3>
+          <ul>
+            <li><strong>RPM-пакет для Fedora:</strong> в релизах теперь собираются пакеты <code>.rpm</code> (x64 и ARM64), а лёгкий установщик <code>UliBlock-Installer-linux-*.AppImage</code> автоматически определяет Fedora/RHEL/openSUSE и ставит <code>.rpm</code> через <code>dnf</code>/<code>zypper</code>/<code>rpm</code>.</li>
+            <li><strong>Автообновление на Windows без командной строки:</strong> путь к скачанному <code>.msi</code> записывается в файл <code>update-path.txt</code>, а запуск идёт через <code>wscript.exe</code> (VBScript), полностью без окна <code>cmd.exe</code>.</li>
+            <li><strong>Только MSI для Windows:</strong> сборка устаревшего NSIS-установщика <code>.exe</code> отключена.</li>
+          </ul>
+        </div>
 
         <div class="changelog-item">
           <h3><span class="ver-pill">v1.3.1</span> Сворачивание папок и поддержка папок TurboWarp в SB3 Explorer</h3>
@@ -806,7 +819,7 @@
 
   <script>
     (function () {
-      const VERSION = '1.3.1';
+      const VERSION = '1.3.2';
       const BASE = 'https://github.com/123asxcqasdc/uliblock/releases/download/v' + VERSION + '/';
 
       let selectedOs = /Linux/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent) ? 'linux' : 'windows';
@@ -845,11 +858,12 @@
 
         const archLabel = selectedArch === 'arm64' ? 'ARM64' : 'x64';
 
-        if (selectedDistro === 'debian') {
+        if (selectedDistro === 'debian' || selectedDistro === 'fedora') {
           resDeb.classList.remove('hidden');
           resOther.classList.add('hidden');
           const installerName = 'UliBlock-Installer-linux-' + selectedArch + '-' + VERSION + '.AppImage';
-          debInstTitle.textContent = 'Установщик UliBlock для Debian / Ubuntu (' + archLabel + ')';
+          const distroName = selectedDistro === 'fedora' ? 'Fedora / RHEL / openSUSE' : 'Debian / Ubuntu';
+          debInstTitle.textContent = 'Установщик UliBlock для ' + distroName + ' (' + archLabel + ')';
           debInstFile.textContent = installerName;
           debInstStepFile.textContent = installerName;
           dlLinuxInstaller.href = BASE + installerName;

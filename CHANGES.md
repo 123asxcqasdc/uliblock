@@ -137,6 +137,16 @@
   - В левом дереве добавлено сворачивание/разворачивание папок (`▸`/`▾`, двойной клик, кнопки `+`/`−` для всего дерева и автоматическое раскрытие предков при переходе).
   - Добавлена поддержка папок TurboWarp (`Папка//Спрайт` и `Папка//Ресурс`) в дереве проводника, предпросмотре и экспорте `.sprite3`/ZIP.
 
+## v1.3.2 — RPM-пакет для Fedora, автообновление на Windows без cmd и только MSI
+
+- `package.json`, `release-automation/build.mjs`, `.github/workflows/release.yml`:
+  - Добавлена сборка `.rpm` для Linux (x64 и arm64, с установкой `rpm` и `xz-utils` в CI).
+  - Полностью отключена сборка и загрузка Windows `.exe` (NSIS) — для Windows выпускается только `.msi`.
+- `scripts/linux-deb-installer/uliblock-deb-installer.py`:
+  - Добавлено автоопределение дистрибутивов на базе `.rpm` (Fedora, RHEL, openSUSE и др.) и установка `.rpm` пакетов через `dnf` / `zypper` / `yum` / `rpm` с проверкой сигнатуры и передачей флагов `--rpm` / `--deb`.
+- `src-main/auto-updater.js`:
+  - На Windows путь к скачанному `.msi` записывается в `update-path.txt`, а запуск ожидания и `msiexec.exe /i ... /passive` выполняется через `wscript.exe` (`run-autoupdate.vbs`), полностью без окна командной строки `cmd.exe`.
+
 ## v1.2.2 — Перекраска PenguinMod-Paint в цвета темы UliBlock
 
 - `package.json`, `package-lock.json`, `docs/index.html`: версия обновлена до `1.2.2`.

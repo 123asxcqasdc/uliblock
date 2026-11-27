@@ -175,16 +175,10 @@ const build = async ({
   }
 };
 
-const buildWindows = async () => {
-  await build({
-    platformName: 'WINDOWS',
-    platformType: 'msi'
-  });
-  await build({
-    platformName: 'WINDOWS',
-    platformType: 'nsis'
-  });
-};
+const buildWindows = () => build({
+  platformName: 'WINDOWS',
+  platformType: 'msi'
+});
 
 const buildWindowsDir = () => build({
   platformName: 'WINDOWS',
@@ -194,6 +188,11 @@ const buildWindowsDir = () => build({
 const buildDebian = () => build({
   platformName: 'LINUX',
   platformType: 'deb'
+});
+
+const buildRpm = () => build({
+  platformName: 'LINUX',
+  platformType: 'rpm'
 });
 
 const buildAppImage = () => build({
@@ -211,6 +210,7 @@ const run = async () => {
     '--windows': buildWindows,
     '--windows-dir': buildWindowsDir,
     '--debian': buildDebian,
+    '--rpm': buildRpm,
     '--appimage': buildAppImage,
     '--linux-dir': buildLinuxDir
   };
@@ -224,7 +224,7 @@ const run = async () => {
   }
 
   if (built === 0) {
-    console.log('Need to specify platforms: --windows, --windows-dir, --debian, --appimage, --linux-dir');
+    console.log('Need to specify platforms: --windows, --windows-dir, --debian, --rpm, --appimage, --linux-dir');
     process.exit(1);
   }
 };

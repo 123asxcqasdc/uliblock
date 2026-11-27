@@ -252,33 +252,76 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
     await downloadFileWithProgress(installerUrl, installerPath, onProgress);
 
     if (onStatus) onStatus('Запуск MSI-установщика...');
-    // Helper cmd script waits for Electron PID to exit, runs MSI installer with standard
-    // progress bar only (/passive, ALLUSERS=1 per-machine), and relaunches UliBlock.
-    const helperCmd = path.join(updateDir, 'run-autoupdate.cmd');
-    const exePath = process.execPath;
-    const batLines = [
-      '@echo off',
-      `set "PID=${process.pid}"`,
-      ':waitloop',
-      'tasklist /FI "PID eq %PID%" 2>NUL | find /I "%PID%" >NUL',
-      'if not errorlevel 1 (',
-      '  timeout /t 1 /nobreak >NUL',
-      '  goto waitloop',
-      ')',
-      `start "" /wait msiexec.exe /i "${installerPath}" /passive`,
-      'if exist "%ProgramFiles%\\UliBlock\\UliBlock.exe" (',
-      '  start "" "%ProgramFiles%\\UliBlock\\UliBlock.exe"',
-      `) else if exist "${exePath}" (`,
-      `  start "" "${exePath}"`,
-      ')',
-      'del /f /q "%~f0" >NUL 2>&1'
-    ].join('\r\n') + '\r\n';
-    fs.writeFileSync(helperCmd, batLines, 'utf-8');
+    // Write exact downloaded .msi path to a text file and run via wscript.exe (.vbs GUI subsystem)
+    // so NO command prompt (cmd.exe) window ever appears.
+    const writeUtf16LeWithBom = (filePath, text) => {
+      const bom = Buffer.from([0xFF, 0xFE]);
+      const body = Buffer.from(text, 'utf16le');
+      fs.writeFileSync(filePath, Buffer.concat([bom, body]));
+    };
 
-    const child = spawn('cmd.exe', ['/c', helperCmd], {
+    const pathTxtFile = path.join(updateDir, 'update-path.txt');
+    const helperVbs = path.join(updateDir, 'run-autoupdate.vbs');
+    const exePath = process.execPath;
+    const escVbs = (s) => String(s).replace(/"/g, '""');
+
+    writeUtf16LeWithBom(pathTxtFile, installerPath);
+
+    const vbsLines = [
+      'Option Explicit',
+      'On Error Resume Next',
+      'Dim fso, sh, wmi, col, i, pathFile, msiPath, progFiles, targetExe, fallbackExe',
+      'Set fso = CreateObject("Scripting.FileSystemObject")',
+      'Set sh = CreateObject("WScript.Shell")',
+      `Set wmi = GetObject("winmgmts:\\\\.\\root\\cimv2")`,
+      'For i = 1 To 40',
+      `  Set col = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ProcessId = ${process.pid}")`,
+      '  If Err.Number <> 0 Then',
+      '    Err.Clear',
+      '    WScript.Sleep 600',
+      '    Exit For',
+      '  End If',
+      '  If col.Count = 0 Then Exit For',
+      '  WScript.Sleep 250',
+      'Next',
+      `pathFile = "${escVbs(pathTxtFile)}"`,
+      'If fso.FileExists(pathFile) Then',
+      '  msiPath = fso.OpenTextFile(pathFile, 1, False, -1).ReadAll',
+      '  msiPath = Replace(Replace(Trim(msiPath), vbCr, ""), vbLf, "")',
+      'Else',
+      `  msiPath = "${escVbs(installerPath)}"`,
+      'End If',
+      'If msiPath <> "" And fso.FileExists(msiPath) Then',
+      '  sh.Run "msiexec.exe /i """ & msiPath & """ /passive", 1, True',
+      'End If',
+      'progFiles = sh.ExpandEnvironmentStrings("%ProgramFiles%")',
+      'targetExe = progFiles & "\\UliBlock\\UliBlock.exe"',
+      `fallbackExe = "${escVbs(exePath)}"`,
+      'If fso.FileExists(targetExe) Then',
+      '  sh.Run """" & targetExe & """", 1, False',
+      'ElseIf fso.FileExists(fallbackExe) Then',
+      '  sh.Run """" & fallbackExe & """", 1, False',
+      'End If',
+      'If fso.FileExists(pathFile) Then fso.DeleteFile pathFile, True',
+      'fso.DeleteFile WScript.ScriptFullName, True'
+    ].join('\r\n') + '\r\n';
+    writeUtf16LeWithBom(helperVbs, vbsLines);
+
+    const child = spawn('wscript.exe', ['//B', '//Nologo', helperVbs], {
       detached: true,
       stdio: 'ignore',
       windowsHide: true
+    });
+    child.on('error', () => {
+      try {
+        const fallback = spawn('msiexec.exe', ['/i', installerPath, '/passive'], {
+          detached: true,
+          stdio: 'ignore'
+        });
+        fallback.unref();
+      } catch (_e) {
+        // ignore
+      }
     });
     child.unref();
     closeAllWindowsAndExit();
