@@ -121,6 +121,7 @@ button::-moz-focus-inner {
 .more-icon {
     width: calc($more-button-size - 1rem);
     height: calc($more-button-size - 1rem);
+    object-fit: contain;
 }
 
 .coming-soon .more-icon {

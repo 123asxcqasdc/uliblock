@@ -33,6 +33,11 @@ import fileUploadIcon from '../components/action-menu/icon--file-upload.svg';
 import paintIcon from '../components/action-menu/icon--paint.svg';
 import surpriseIcon from '../components/action-menu/icon--surprise.svg';
 import searchIcon from '../components/action-menu/icon--search.svg';
+import uliSnailIcon from '../lib/default-project/uli-snail.svg';
+/* eslint-disable import/no-unresolved */
+import uliSnailSvgRaw from '!raw-loader!../lib/default-project/uli-snail.svg';
+/* eslint-enable import/no-unresolved */
+import {TextEncoder} from '../lib/tw-text-encoder';
 
 import {getCostumeLibrary, getBackdropLibrary} from '../lib/libraries/tw-async-libraries';
 
@@ -81,6 +86,7 @@ class CostumeTab extends React.Component {
             'handleExportCostume',
             'handleNewCostume',
             'handleNewBlankCostume',
+            'handleNewSnailCostume',
             'handleSurpriseCostume',
             'handleSurpriseBackdrop',
             'handleFileUploadClick',
@@ -167,6 +173,36 @@ class CostumeTab extends React.Component {
             this.props.intl.formatMessage(messages.backdrop, {index: 1}) :
             this.props.intl.formatMessage(messages.costume, {index: 1});
         this.handleNewCostume(emptyCostume(name));
+    }
+    handleNewSnailCostume () {
+        const storage = this.props.vm.runtime.storage;
+        const targetId = this.props.vm.editingTarget.id;
+        const isRu = Boolean(
+            this.props.intl &&
+            this.props.intl.locale &&
+            this.props.intl.locale.toLowerCase().startsWith('ru')
+        );
+        const encoder = new TextEncoder();
+        const svgBytes = encoder.encode(uliSnailSvgRaw);
+        const asset = storage.createAsset(
+            storage.AssetType.ImageVector,
+            storage.DataFormat.SVG,
+            svgBytes,
+            null,
+            true
+        );
+        const vmCostume = {
+            name: isRu ? 'Улитка' : 'Snail',
+            dataFormat: storage.DataFormat.SVG,
+            asset: asset,
+            md5: `${asset.assetId}.${storage.DataFormat.SVG}`,
+            assetId: asset.assetId,
+            rotationCenterX: 62.00070526764668,
+            rotationCenterY: 53.841973405113464,
+            bitmapResolution: 1,
+            skinId: null
+        };
+        this.handleNewCostume(vmCostume, false, targetId);
     }
     async handleSurpriseCostume () {
         const costumeLibraryContent = await getCostumeLibrary();
@@ -268,6 +304,12 @@ class CostumeTab extends React.Component {
 
         const isStage = vm.editingTarget.isStage;
         const target = vm.editingTarget.sprite;
+        const isRu = Boolean(
+            intl &&
+            intl.locale &&
+            intl.locale.toLowerCase().startsWith('ru')
+        );
+        const snailButtonTitle = isRu ? 'Улитка' : 'Snail';
 
         const addLibraryMessage = isStage ? messages.addLibraryBackdropMsg : messages.addLibraryCostumeMsg;
         const addFileMessage = isStage ? messages.addFileBackdropMsg : messages.addFileCostumeMsg;
@@ -297,6 +339,11 @@ class CostumeTab extends React.Component {
                         fileChange: this.handleCostumeUpload,
                         fileInput: this.setFileInput,
                         fileMultiple: true
+                    },
+                    {
+                        title: snailButtonTitle,
+                        img: uliSnailIcon,
+                        onClick: this.handleNewSnailCostume
                     },
                     {
                         title: intl.formatMessage(messages.addBlankCostumeMsg),

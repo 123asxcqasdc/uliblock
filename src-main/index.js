@@ -17,7 +17,9 @@ if (!process.mas && !app.requestSingleInstanceLock()) {
 const path = require('path');
 const AbstractWindow = require('./windows/abstract');
 const EditorWindow = require('./windows/editor');
+const UpdateWindow = require('./windows/update');
 const {checkForUpdates} = require('./update-checker');
+const {hasPendingDeferredUpdate, launchDeferredUpdateBeforeQuit} = require('./auto-updater');
 const {tranlateOrNull} = require('./l10n');
 const migrate = require('./migrate');
 const framelessPermissions = require('./frameless-permissions');
@@ -199,10 +201,48 @@ app.on('web-contents-created', (event, webContents) => {
   });
 });
 
-app.on('window-all-closed', () => {
-  if (!isMigrating) {
+let isLaunchingDeferredQuit = false;
+
+app.on('browser-window-created', (_event, browserWindow) => {
+  browserWindow.on('closed', () => {
+    if (!hasPendingDeferredUpdate() || !UpdateWindow.isOpen()) {
+      return;
+    }
+    const remaining = AbstractWindow.getAllWindows();
+    if (remaining.length > 0 && remaining.every((win) => win instanceof UpdateWindow)) {
+      UpdateWindow.closeIfOpen();
+    }
+  });
+});
+
+app.on('before-quit', async (event) => {
+  if (isMigrating || isLaunchingDeferredQuit || !hasPendingDeferredUpdate()) {
+    return;
+  }
+  event.preventDefault();
+  isLaunchingDeferredQuit = true;
+  try {
+    await launchDeferredUpdateBeforeQuit();
+  } catch (err) {
+    console.error('Error launching deferred update on quit:', err);
+  } finally {
     app.quit();
   }
+});
+
+app.on('window-all-closed', async () => {
+  if (isMigrating) {
+    return;
+  }
+  if (hasPendingDeferredUpdate() && !isLaunchingDeferredQuit) {
+    isLaunchingDeferredQuit = true;
+    try {
+      await launchDeferredUpdateBeforeQuit();
+    } catch (err) {
+      console.error('Error launching deferred update after all windows closed:', err);
+    }
+  }
+  app.quit();
 });
 
 // macOS

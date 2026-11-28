@@ -175,6 +175,15 @@
         background: #1b8c27;
       }
 
+      .btn-secondary {
+        background: #eef8ef;
+        border-color: #9ed4a3;
+        color: #177421;
+      }
+      .btn-secondary:hover:not(:disabled) {
+        background: #dff3e1;
+      }
+
       .release-link {
         font-size: 12.5px;
         color: #177421;
@@ -222,6 +231,7 @@
 
         <div class="actions">
           <button type="button" id="later-btn">Позже</button>
+          <button type="button" class="btn-secondary" id="after-work-btn">Обновить после работы</button>
           <button type="button" class="btn-primary" id="update-btn">Обновить сейчас</button>
         </div>
       </div>
@@ -239,16 +249,18 @@
       if (info.releaseNotes && info.releaseNotes.trim()) {
         notesEl.textContent = info.releaseNotes.trim();
       } else {
-        notesEl.textContent = `Вышла новая версия ${appName} ${info.tag || 'v' + info.latestVersion}.\n\nНажмите «Обновить сейчас», чтобы закрыть редактор и автоматически установить обновление (при установке в систему потребуется только ввод пароля администратора).`;
+        notesEl.textContent = `Вышла новая версия ${appName} ${info.tag || 'v' + info.latestVersion}.\n\nНажмите «Обновить сейчас», чтобы закрыть редактор и автоматически установить обновление, или «Обновить после работы», чтобы скачать установщик в фоне и запустить его после закрытия всех окон.`;
       }
 
       const updateBtn = document.getElementById('update-btn');
+      const afterWorkBtn = document.getElementById('after-work-btn');
       const laterBtn = document.getElementById('later-btn');
       const skipCheckbox = document.getElementById('skip-checkbox');
       const progressWrap = document.getElementById('progress-wrap');
       const progressStatus = document.getElementById('progress-status');
       const progressFill = document.getElementById('progress-fill');
       const errorBox = document.getElementById('error-box');
+      let isDeferredMode = false;
 
       document.getElementById('open-release').addEventListener('click', () => {
         UpdatePreload.openReleasePage();
@@ -265,8 +277,12 @@
           errorBox.textContent = `Не удалось запустить автообновление: ${payload.error}`;
           errorBox.classList.add('visible');
           updateBtn.disabled = false;
+          afterWorkBtn.disabled = false;
           laterBtn.disabled = false;
+          skipCheckbox.disabled = false;
+          laterBtn.textContent = 'Позже';
           updateBtn.textContent = 'Повторить';
+          isDeferredMode = false;
           return;
         }
         if (payload.status) {
@@ -274,18 +290,51 @@
         }
         if (typeof payload.percent === 'number') {
           progressFill.style.width = `${payload.percent}%`;
-          if (payload.total > 0) {
-            progressStatus.textContent = `Загрузка установщика: ${payload.percent}% (${formatMB(payload.received)} / ${formatMB(payload.total)})`;
+          if (payload.total > 0 && !payload.deferredReady) {
+            progressStatus.textContent = isDeferredMode ?
+              `Фоновая загрузка: ${payload.percent}% (${formatMB(payload.received)} / ${formatMB(payload.total)})` :
+              `Загрузка установщика: ${payload.percent}% (${formatMB(payload.received)} / ${formatMB(payload.total)})`;
           }
+        }
+        if (payload.deferredReady) {
+          laterBtn.textContent = 'Продолжить работу';
+          laterBtn.disabled = false;
+        }
+      });
+
+      afterWorkBtn.addEventListener('click', async () => {
+        isDeferredMode = true;
+        errorBox.classList.remove('visible');
+        progressWrap.classList.add('visible');
+        progressFill.style.width = '0%';
+        progressStatus.textContent = 'Начинается скачивание установщика в фоне...';
+        updateBtn.disabled = true;
+        afterWorkBtn.disabled = true;
+        skipCheckbox.disabled = true;
+        laterBtn.textContent = 'Продолжить работу';
+        laterBtn.disabled = false;
+
+        const result = await UpdatePreload.scheduleUpdateAfterWork();
+        if (result && !result.ok) {
+          isDeferredMode = false;
+          errorBox.textContent = `Не удалось скачать обновление: ${result.error || 'неизвестная ошибка'}`;
+          errorBox.classList.add('visible');
+          updateBtn.disabled = false;
+          afterWorkBtn.disabled = false;
+          laterBtn.disabled = false;
+          skipCheckbox.disabled = false;
+          laterBtn.textContent = 'Позже';
         }
       });
 
       updateBtn.addEventListener('click', async () => {
+        isDeferredMode = false;
         errorBox.classList.remove('visible');
         progressWrap.classList.add('visible');
         progressFill.style.width = '0%';
         progressStatus.textContent = 'Подготовка загрузки установщика...';
         updateBtn.disabled = true;
+        afterWorkBtn.disabled = true;
         laterBtn.disabled = true;
         skipCheckbox.disabled = true;
 
@@ -294,6 +343,7 @@
           errorBox.textContent = `Не удалось запустить автообновление: ${result.error || 'неизвестная ошибка'}`;
           errorBox.classList.add('visible');
           updateBtn.disabled = false;
+          afterWorkBtn.disabled = false;
           laterBtn.disabled = false;
           skipCheckbox.disabled = false;
           updateBtn.textContent = 'Повторить';

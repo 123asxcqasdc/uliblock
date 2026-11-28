@@ -158,9 +158,8 @@ const isWritablePath = (targetPath) => {
 };
 
 /**
- * Downloads the appropriate installer for the current OS/arch, launches it in
- * unattended auto-update mode (-autoupdate on Linux, /S on Windows), and closes
- * all UliBlock processes.
+ * Downloads the appropriate installer for the current OS/arch and returns a descriptor
+ * ready to be launched immediately or after all UliBlock windows close.
  *
  * @param {{
  *   version: string,
@@ -169,7 +168,7 @@ const isWritablePath = (targetPath) => {
  *   onProgress?: (progress: {received: number, total: number, percent: number | null}) => void
  * }} options
  */
-const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
+const prepareSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
   const cleanVersion = version.replace(/^v/i, '');
   const releaseTag = tag || `v${cleanVersion}`;
   const baseUrl = `https://github.com/${REPO}/releases/download/${releaseTag}`;
@@ -191,34 +190,17 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
       await downloadFileWithProgress(downloadUrl, newAppImagePath, onProgress);
       fs.chmodSync(newAppImagePath, 0o755);
 
-      if (onStatus) onStatus('Запуск обновления и перезапуск UliBlock...');
-      const scriptPath = path.join(updateDir, 'apply-appimage-update.sh');
-      const script = [
-        '#!/bin/sh',
-        'PID="$1"',
-        'NEW_IMG="$2"',
-        'TARGET_IMG="$3"',
-        'i=0',
-        'while kill -0 "$PID" 2>/dev/null && [ "$i" -lt 40 ]; do',
-        '  sleep 0.25',
-        '  i=$((i + 1))',
-        'done',
-        'mv -f "$NEW_IMG" "$TARGET_IMG" && chmod +x "$TARGET_IMG"',
-        'exec "$TARGET_IMG" >/dev/null 2>&1 &'
-      ].join('\n') + '\n';
-      fs.writeFileSync(scriptPath, script, {mode: 0o755});
-
-      const child = spawn('/bin/sh', [scriptPath, String(process.pid), newAppImagePath, currentAppImage], {
-        detached: true,
-        stdio: 'ignore',
-        env: getCleanEnvForSpawn()
-      });
-      child.unref();
-      closeAllWindowsAndExit();
-      return;
+      return {
+        platform: 'linux',
+        kind: 'appimage-inplace',
+        updateDir,
+        releaseTag,
+        installerPath: newAppImagePath,
+        targetAppImage: currentAppImage
+      };
     }
 
-    // Standard Linux (.deb) install: download lightweight AppImage installer and launch with -autoupdate
+    // Standard Linux (.deb / .rpm) install: download lightweight AppImage installer
     const installerArch = isArm64 ? 'arm64' : 'x64';
     const installerName = `UliBlock-Installer-linux-${installerArch}-${cleanVersion}.AppImage`;
     const installerUrl = `${baseUrl}/${installerName}`;
@@ -228,19 +210,13 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
     await downloadFileWithProgress(installerUrl, installerPath, onProgress);
     fs.chmodSync(installerPath, 0o755);
 
-    if (onStatus) onStatus('Запуск установщика в режиме автообновления...');
-    const child = spawn(
-      installerPath,
-      ['-autoupdate', '--tag', releaseTag, '--wait-pid', String(process.pid)],
-      {
-        detached: true,
-        stdio: 'ignore',
-        env: getCleanEnvForSpawn()
-      }
-    );
-    child.unref();
-    closeAllWindowsAndExit();
-    return;
+    return {
+      platform: 'linux',
+      kind: 'linux-installer',
+      updateDir,
+      releaseTag,
+      installerPath
+    };
   }
 
   if (process.platform === 'win32') {
@@ -251,21 +227,81 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
     if (onStatus) onStatus(`Загрузка установщика ${installerName}...`);
     await downloadFileWithProgress(installerUrl, installerPath, onProgress);
 
-    if (onStatus) onStatus('Запуск MSI-установщика...');
-    // Write exact downloaded .msi path to a text file and run via wscript.exe (.vbs GUI subsystem)
-    // so NO command prompt (cmd.exe) window ever appears.
+    return {
+      platform: 'win32',
+      kind: 'win32-msi',
+      updateDir,
+      releaseTag,
+      installerPath
+    };
+  }
+
+  throw new Error(`Автообновление не поддерживается на платформе ${process.platform}.`);
+};
+
+/**
+ * Spawns the prepared installer in detached mode waiting for the current process PID to exit.
+ * @param {Awaited<ReturnType<typeof prepareSelfUpdate>>} prepared
+ * @param {{relaunch?: boolean}} [opts]
+ */
+const launchPreparedUpdate = (prepared, {relaunch = true} = {}) => {
+  if (!prepared) return;
+
+  if (prepared.kind === 'appimage-inplace') {
+    const scriptPath = path.join(prepared.updateDir, 'apply-appimage-update.sh');
+    const lines = [
+      '#!/bin/sh',
+      'PID="$1"',
+      'NEW_IMG="$2"',
+      'TARGET_IMG="$3"',
+      'i=0',
+      'while kill -0 "$PID" 2>/dev/null && [ "$i" -lt 80 ]; do',
+      '  sleep 0.25',
+      '  i=$((i + 1))',
+      'done',
+      'mv -f "$NEW_IMG" "$TARGET_IMG" && chmod +x "$TARGET_IMG"'
+    ];
+    if (relaunch) {
+      lines.push('exec "$TARGET_IMG" >/dev/null 2>&1 &');
+    }
+    fs.writeFileSync(scriptPath, lines.join('\n') + '\n', {mode: 0o755});
+
+    const child = spawn('/bin/sh', [scriptPath, String(process.pid), prepared.installerPath, prepared.targetAppImage], {
+      detached: true,
+      stdio: 'ignore',
+      env: getCleanEnvForSpawn()
+    });
+    child.unref();
+    return;
+  }
+
+  if (prepared.kind === 'linux-installer') {
+    const args = ['-autoupdate', '--tag', prepared.releaseTag, '--wait-pid', String(process.pid)];
+    if (!relaunch) {
+      args.push('--no-relaunch');
+    }
+    const child = spawn(prepared.installerPath, args, {
+      detached: true,
+      stdio: 'ignore',
+      env: getCleanEnvForSpawn()
+    });
+    child.unref();
+    return;
+  }
+
+  if (prepared.kind === 'win32-msi') {
     const writeUtf16LeWithBom = (filePath, text) => {
       const bom = Buffer.from([0xFF, 0xFE]);
       const body = Buffer.from(text, 'utf16le');
       fs.writeFileSync(filePath, Buffer.concat([bom, body]));
     };
 
-    const pathTxtFile = path.join(updateDir, 'update-path.txt');
-    const helperVbs = path.join(updateDir, 'run-autoupdate.vbs');
+    const pathTxtFile = path.join(prepared.updateDir, 'update-path.txt');
+    const helperVbs = path.join(prepared.updateDir, 'run-autoupdate.vbs');
     const exePath = process.execPath;
     const escVbs = (s) => String(s).replace(/"/g, '""');
 
-    writeUtf16LeWithBom(pathTxtFile, installerPath);
+    writeUtf16LeWithBom(pathTxtFile, prepared.installerPath);
 
     const vbsLines = [
       'Option Explicit',
@@ -274,7 +310,7 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
       'Set fso = CreateObject("Scripting.FileSystemObject")',
       'Set sh = CreateObject("WScript.Shell")',
       `Set wmi = GetObject("winmgmts:\\\\.\\root\\cimv2")`,
-      'For i = 1 To 40',
+      'For i = 1 To 80',
       `  Set col = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ProcessId = ${process.pid}")`,
       '  If Err.Number <> 0 Then',
       '    Err.Clear',
@@ -289,23 +325,29 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
       '  msiPath = fso.OpenTextFile(pathFile, 1, False, -1).ReadAll',
       '  msiPath = Replace(Replace(Trim(msiPath), vbCr, ""), vbLf, "")',
       'Else',
-      `  msiPath = "${escVbs(installerPath)}"`,
+      `  msiPath = "${escVbs(prepared.installerPath)}"`,
       'End If',
       'If msiPath <> "" And fso.FileExists(msiPath) Then',
       '  sh.Run "msiexec.exe /i """ & msiPath & """ /passive", 1, True',
-      'End If',
-      'progFiles = sh.ExpandEnvironmentStrings("%ProgramFiles%")',
-      'targetExe = progFiles & "\\UliBlock\\UliBlock.exe"',
-      `fallbackExe = "${escVbs(exePath)}"`,
-      'If fso.FileExists(targetExe) Then',
-      '  sh.Run """" & targetExe & """", 1, False',
-      'ElseIf fso.FileExists(fallbackExe) Then',
-      '  sh.Run """" & fallbackExe & """", 1, False',
-      'End If',
+      'End If'
+    ];
+    if (relaunch) {
+      vbsLines.push(
+        'progFiles = sh.ExpandEnvironmentStrings("%ProgramFiles%")',
+        'targetExe = progFiles & "\\UliBlock\\UliBlock.exe"',
+        `fallbackExe = "${escVbs(exePath)}"`,
+        'If fso.FileExists(targetExe) Then',
+        '  sh.Run """" & targetExe & """", 1, False',
+        'ElseIf fso.FileExists(fallbackExe) Then',
+        '  sh.Run """" & fallbackExe & """", 1, False',
+        'End If'
+      );
+    }
+    vbsLines.push(
       'If fso.FileExists(pathFile) Then fso.DeleteFile pathFile, True',
       'fso.DeleteFile WScript.ScriptFullName, True'
-    ].join('\r\n') + '\r\n';
-    writeUtf16LeWithBom(helperVbs, vbsLines);
+    );
+    writeUtf16LeWithBom(helperVbs, vbsLines.join('\r\n') + '\r\n');
 
     const child = spawn('wscript.exe', ['//B', '//Nologo', helperVbs], {
       detached: true,
@@ -314,7 +356,7 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
     });
     child.on('error', () => {
       try {
-        const fallback = spawn('msiexec.exe', ['/i', installerPath, '/passive'], {
+        const fallback = spawn('msiexec.exe', ['/i', prepared.installerPath, '/passive'], {
           detached: true,
           stdio: 'ignore'
         });
@@ -324,14 +366,108 @@ const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
       }
     });
     child.unref();
-    closeAllWindowsAndExit();
-    return;
+  }
+};
+
+/**
+ * Downloads the appropriate installer for the current OS/arch, launches it in
+ * unattended auto-update mode, and closes all UliBlock processes.
+ */
+const startSelfUpdate = async ({version, tag, onStatus, onProgress}) => {
+  const prepared = await prepareSelfUpdate({version, tag, onStatus, onProgress});
+  if (onStatus) {
+    onStatus(prepared.kind === 'win32-msi' ?
+      'Запуск MSI-установщика...' :
+      (prepared.kind === 'appimage-inplace' ?
+        'Запуск обновления и перезапуск UliBlock...' :
+        'Запуск установщика в режиме автообновления...'));
+  }
+  launchPreparedUpdate(prepared, {relaunch: true});
+  closeAllWindowsAndExit();
+};
+
+/**
+ * @type {{
+ *   status: 'downloading' | 'ready' | 'launched' | 'error',
+ *   promise: Promise<any>,
+ *   prepared: any,
+ *   error: Error | null
+ * } | null}
+ */
+let deferredUpdateState = null;
+
+/**
+ * Downloads the installer in the background and marks it to launch once all
+ * UliBlock windows have been closed.
+ */
+const scheduleUpdateAfterWork = ({version, tag, onStatus, onProgress}) => {
+  if (deferredUpdateState && (deferredUpdateState.status === 'downloading' || deferredUpdateState.status === 'ready')) {
+    return deferredUpdateState.promise;
   }
 
-  throw new Error(`Автообновление не поддерживается на платформе ${process.platform}.`);
+  const state = {
+    status: 'downloading',
+    promise: null,
+    prepared: null,
+    error: null
+  };
+  deferredUpdateState = state;
+
+  state.promise = prepareSelfUpdate({version, tag, onStatus, onProgress})
+    .then((prepared) => {
+      state.prepared = prepared;
+      if (state.status !== 'launched') {
+        state.status = 'ready';
+      }
+      if (onStatus) {
+        onStatus('Установщик скачан! Установка запустится после закрытия всех окон UliBlock.');
+      }
+      return prepared;
+    })
+    .catch((err) => {
+      state.error = err;
+      state.status = 'error';
+      throw err;
+    });
+
+  return state.promise;
+};
+
+const hasPendingDeferredUpdate = () => Boolean(
+  deferredUpdateState &&
+  (deferredUpdateState.status === 'downloading' || deferredUpdateState.status === 'ready')
+);
+
+const getDeferredUpdatePreparedSync = () => (
+  deferredUpdateState && deferredUpdateState.status === 'ready' ? deferredUpdateState.prepared : null
+);
+
+const launchDeferredUpdateBeforeQuit = async () => {
+  if (!deferredUpdateState || deferredUpdateState.status === 'launched' || deferredUpdateState.status === 'error') {
+    return false;
+  }
+  if (deferredUpdateState.status === 'downloading') {
+    try {
+      await deferredUpdateState.promise;
+    } catch (_e) {
+      return false;
+    }
+  }
+  if (deferredUpdateState.status === 'ready' && deferredUpdateState.prepared) {
+    deferredUpdateState.status = 'launched';
+    launchPreparedUpdate(deferredUpdateState.prepared, {relaunch: false});
+    return true;
+  }
+  return false;
 };
 
 module.exports = {
   downloadFileWithProgress,
-  startSelfUpdate
+  prepareSelfUpdate,
+  launchPreparedUpdate,
+  startSelfUpdate,
+  scheduleUpdateAfterWork,
+  hasPendingDeferredUpdate,
+  getDeferredUpdatePreparedSync,
+  launchDeferredUpdateBeforeQuit
 };

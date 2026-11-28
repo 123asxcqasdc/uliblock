@@ -393,7 +393,7 @@ def wait_for_pid_exit(pid, timeout=6.0):
         time.sleep(0.2)
 
 
-def run_gtk_gui(pkg_format="deb", preferred_tag=None, auto_install=False, wait_pid=None):
+def run_gtk_gui(pkg_format="deb", preferred_tag=None, auto_install=False, wait_pid=None, relaunch=True):
     import gi
 
     gi.require_version("Gtk", "3.0")
@@ -741,12 +741,18 @@ def run_gtk_gui(pkg_format="deb", preferred_tag=None, auto_install=False, wait_p
                     self.cancel_btn.set_label("Закрыть")
                     self.cancel_btn.set_sensitive(True)
                     if auto_install:
-                        self.status_label.set_markup(
-                            f"<b>UliBlock {GLib.markup_escape_text(info['tag'])} успешно обновлён!</b>\n"
-                            "Запуск обновлённого редактора..."
-                        )
+                        if relaunch:
+                            self.status_label.set_markup(
+                                f"<b>UliBlock {GLib.markup_escape_text(info['tag'])} успешно обновлён!</b>\n"
+                                "Запуск обновлённого редактора..."
+                            )
+                        else:
+                            self.status_label.set_markup(
+                                f"<b>UliBlock {GLib.markup_escape_text(info['tag'])} успешно обновлён!</b>"
+                            )
                         def _auto_launch():
-                            launch_uliblock()
+                            if relaunch:
+                                launch_uliblock()
                             self.close()
                             return False
                         GLib.timeout_add(900, _auto_launch)
@@ -802,7 +808,7 @@ def run_gtk_gui(pkg_format="deb", preferred_tag=None, auto_install=False, wait_p
     Gtk.main()
 
 
-def run_cli_or_zenity(pkg_format="deb", preferred_tag=None, auto_install=False, wait_pid=None):
+def run_cli_or_zenity(pkg_format="deb", preferred_tag=None, auto_install=False, wait_pid=None, relaunch=True):
     has_gui = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
     use_zenity = has_gui and bool(shutil.which("zenity"))
 
@@ -898,7 +904,8 @@ def run_cli_or_zenity(pkg_format="deb", preferred_tag=None, auto_install=False, 
         msg = f"UliBlock {info['tag']} успешно установлен!"
         print(msg)
         if auto_install:
-            launch_uliblock()
+            if relaunch:
+                launch_uliblock()
         elif use_zenity:
             res = subprocess.run(
                 [
@@ -928,6 +935,7 @@ def main():
     force_cli = False
     auto_install = False
     wait_pid = None
+    relaunch = True
 
     i = 0
     while i < len(args):
@@ -945,6 +953,8 @@ def main():
             forced_format = "deb"
         elif arg in ("-autoupdate", "--autoupdate", "--auto", "--auto-update"):
             auto_install = True
+        elif arg == "--no-relaunch":
+            relaunch = False
         elif arg == "--tag" and i + 1 < len(args):
             i += 1
             preferred_tag = args[i]
@@ -965,12 +975,12 @@ def main():
     has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
     if has_display and not force_cli:
         try:
-            run_gtk_gui(pkg_format=pkg_format, preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid)
+            run_gtk_gui(pkg_format=pkg_format, preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid, relaunch=relaunch)
             return
         except Exception as exc:
             print(f"GTK3 недоступен ({exc}), переключение на zenity/CLI...", file=sys.stderr)
 
-    run_cli_or_zenity(pkg_format=pkg_format, preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid)
+    run_cli_or_zenity(pkg_format=pkg_format, preferred_tag=preferred_tag, auto_install=auto_install, wait_pid=wait_pid, relaunch=relaunch)
 
 
 if __name__ == "__main__":

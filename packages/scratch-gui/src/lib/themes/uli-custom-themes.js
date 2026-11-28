@@ -1,8 +1,10 @@
+import lottie from 'lottie-web';
 import AddonHooks from '../../addons/hooks';
 
 const STORAGE_KEY = 'uliblock:custom-themes:v1';
 const STYLE_BASE_ID = 'uliblock-custom-theme-style';
 const STYLE_CSS_ID = 'uliblock-custom-theme-css';
+const LOTTIE_CONTAINER_ID = 'uliblock-lottie-wallpaper';
 
 const ICON_SELECTORS = {
     greenFlag: 'img[data-uli-icon="green-flag"]',
@@ -12,8 +14,21 @@ const ICON_SELECTORS = {
     logo: '#logo_img'
 };
 
-let iconObserver = null;
+let domObserver = null;
 let currentAppliedIcons = null;
+let currentLottieConfig = null;
+let lottieInstance = null;
+let lottieMountedContainer = null;
+let lottieMountedSignature = '';
+
+const isValidLottieData = data => Boolean(
+    data &&
+    typeof data === 'object' &&
+    !Array.isArray(data) &&
+    Array.isArray(data.layers) &&
+    data.layers.length > 0 &&
+    (typeof data.fr === 'number' || typeof data.op === 'number' || typeof data.v === 'string')
+);
 
 /**
  * Converts #rrggbb hex to {r, g, b}.
@@ -64,6 +79,9 @@ const createEmptyTheme = (name = 'Новая тема') => ({
     useCustomAccent: true,
     menuBarColor: '',
     wallpaperDataUrl: '',
+    wallpaperLottieData: null,
+    wallpaperLottieName: '',
+    wallpaperLottieSpeed: 1,
     wallpaperOpacity: 0.35,
     wallpaperBlur: 0,
     wallpaperSize: 'cover',
@@ -95,6 +113,15 @@ const sanitizeTheme = raw => {
     }
     if (typeof r.wallpaperDataUrl === 'string') {
         base.wallpaperDataUrl = r.wallpaperDataUrl;
+    }
+    if (isValidLottieData(r.wallpaperLottieData)) {
+        base.wallpaperLottieData = r.wallpaperLottieData;
+    }
+    if (typeof r.wallpaperLottieName === 'string') {
+        base.wallpaperLottieName = r.wallpaperLottieName;
+    }
+    if (typeof r.wallpaperLottieSpeed === 'number' && !Number.isNaN(r.wallpaperLottieSpeed)) {
+        base.wallpaperLottieSpeed = Math.max(0.25, Math.min(2.5, r.wallpaperLottieSpeed));
     }
     if (typeof r.wallpaperOpacity === 'number' && !Number.isNaN(r.wallpaperOpacity)) {
         base.wallpaperOpacity = Math.max(0.05, Math.min(1, r.wallpaperOpacity));
@@ -170,26 +197,123 @@ const syncIconsToDom = icons => {
     }
 };
 
-const ensureIconObserver = icons => {
+const destroyLottieInstance = () => {
+    if (lottieInstance) {
+        try {
+            lottieInstance.destroy();
+        } catch (_e) {
+            // ignore
+        }
+        lottieInstance = null;
+    }
+    if (lottieMountedContainer && lottieMountedContainer.parentNode) {
+        lottieMountedContainer.parentNode.removeChild(lottieMountedContainer);
+    }
+    lottieMountedContainer = null;
+    lottieMountedSignature = '';
+};
+
+const syncLottieWallpaper = config => {
+    if (typeof document === 'undefined') return;
+    if (!config || !config.data) {
+        destroyLottieInstance();
+        return;
+    }
+
+    const blocksEl = document.querySelector('[class*="blocks_blocks_"]');
+    if (!blocksEl) {
+        if (lottieInstance) {
+            destroyLottieInstance();
+        }
+        return;
+    }
+
+    let container = blocksEl.querySelector(`#${LOTTIE_CONTAINER_ID}`);
+    if (!container) {
+        container = document.createElement('div');
+        container.id = LOTTIE_CONTAINER_ID;
+        blocksEl.insertBefore(container, blocksEl.firstChild);
+    }
+
+    container.style.position = 'absolute';
+    container.style.inset = '0';
+    container.style.pointerEvents = 'none';
+    container.style.zIndex = '0';
+    container.style.overflow = 'hidden';
+    container.style.opacity = String(config.opacity);
+    container.style.filter = config.blur > 0 ? `blur(${config.blur}px)` : '';
+    container.style.transform = config.blur > 0 ? 'scale(1.04)' : '';
+
+    const preserveAspectRatio = config.size === 'contain' ?
+        'xMidYMid meet' :
+        (config.size === 'repeat' ? 'none' : 'xMidYMid slice');
+
+    if (lottieMountedContainer !== container || lottieMountedSignature !== config.signature) {
+        if (lottieInstance) {
+            try {
+                lottieInstance.destroy();
+            } catch (_e) {
+                // ignore
+            }
+            lottieInstance = null;
+        }
+        container.innerHTML = '';
+        try {
+            const clonedData = JSON.parse(JSON.stringify(config.data));
+            lottieInstance = lottie.loadAnimation({
+                container,
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                animationData: clonedData,
+                rendererSettings: {
+                    preserveAspectRatio
+                }
+            });
+            lottieMountedContainer = container;
+            lottieMountedSignature = config.signature;
+        } catch (_e) {
+            lottieInstance = null;
+            lottieMountedContainer = null;
+            lottieMountedSignature = '';
+        }
+    }
+
+    if (lottieInstance && typeof lottieInstance.setSpeed === 'function') {
+        try {
+            lottieInstance.setSpeed(config.speed || 1);
+        } catch (_e) {
+            // ignore
+        }
+    }
+};
+
+const ensureDomSync = (icons, lottieConfig) => {
     const hasAnyIcon = Boolean(icons && Object.values(icons).some(Boolean));
     currentAppliedIcons = hasAnyIcon ? icons : null;
-    syncIconsToDom(currentAppliedIcons);
+    currentLottieConfig = lottieConfig || null;
 
-    if (hasAnyIcon) {
-        if (!iconObserver && typeof MutationObserver !== 'undefined' && document.body) {
-            iconObserver = new MutationObserver(() => {
+    syncIconsToDom(currentAppliedIcons);
+    syncLottieWallpaper(currentLottieConfig);
+
+    if (hasAnyIcon || currentLottieConfig) {
+        if (!domObserver && typeof MutationObserver !== 'undefined' && document.body) {
+            domObserver = new MutationObserver(() => {
                 if (currentAppliedIcons) {
                     syncIconsToDom(currentAppliedIcons);
                 }
+                if (currentLottieConfig) {
+                    syncLottieWallpaper(currentLottieConfig);
+                }
             });
-            iconObserver.observe(document.body, {
+            domObserver.observe(document.body, {
                 childList: true,
                 subtree: true
             });
         }
-    } else if (iconObserver) {
-        iconObserver.disconnect();
-        iconObserver = null;
+    } else if (domObserver) {
+        domObserver.disconnect();
+        domObserver = null;
     }
 };
 
@@ -223,7 +347,7 @@ const applyCustomTheme = theme => {
     if (!theme) {
         removeStyleEl(STYLE_BASE_ID);
         removeStyleEl(STYLE_CSS_ID);
-        ensureIconObserver(null);
+        ensureDomSync(null, null);
         document.documentElement.removeAttribute('data-uli-custom-theme');
         return;
     }
@@ -274,11 +398,10 @@ const applyCustomTheme = theme => {
         rules.push(`:root {\n  ${rootVars.join('\n  ')}\n}`);
     }
 
-    if (t.wallpaperDataUrl) {
-        const safeUrl = t.wallpaperDataUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        const bgSize = t.wallpaperSize === 'repeat' ? 'auto' : t.wallpaperSize;
-        const bgRepeat = t.wallpaperSize === 'repeat' ? 'repeat' : 'no-repeat';
-        const blurRule = t.wallpaperBlur > 0 ? `filter: blur(${t.wallpaperBlur}px); transform: scale(1.04);` : '';
+    const hasLottieWallpaper = isValidLottieData(t.wallpaperLottieData);
+    const hasImageWallpaper = !hasLottieWallpaper && Boolean(t.wallpaperDataUrl);
+
+    if (hasImageWallpaper || hasLottieWallpaper) {
         const workspaceFillOpacity = Math.max(0.12, Math.min(0.95, 1 - t.wallpaperOpacity)).toFixed(2);
 
         rules.push(`
@@ -290,6 +413,27 @@ const applyCustomTheme = theme => {
   position: relative;
   overflow: hidden;
 }
+[class*="blocks_blocks_"] .injectionDiv {
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+[class*="blocks_blocks_"] .blocklySvg {
+  background-color: transparent !important;
+}
+[class*="blocks_blocks_"] .blocklyMainBackground {
+  fill-opacity: ${workspaceFillOpacity} !important;
+}
+`);
+    }
+
+    if (hasImageWallpaper) {
+        const safeUrl = t.wallpaperDataUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const bgSize = t.wallpaperSize === 'repeat' ? 'auto' : t.wallpaperSize;
+        const bgRepeat = t.wallpaperSize === 'repeat' ? 'repeat' : 'no-repeat';
+        const blurRule = t.wallpaperBlur > 0 ? `filter: blur(${t.wallpaperBlur}px); transform: scale(1.04);` : '';
+
+        rules.push(`
 [class*="blocks_blocks_"]::before {
   content: "";
   position: absolute;
@@ -303,16 +447,15 @@ const applyCustomTheme = theme => {
   pointer-events: none;
   z-index: 0;
 }
-[class*="blocks_blocks_"] .injectionDiv {
-  background: transparent !important;
-  position: relative;
-  z-index: 1;
-}
-[class*="blocks_blocks_"] .blocklySvg {
-  background-color: transparent !important;
-}
-[class*="blocks_blocks_"] .blocklyMainBackground {
-  fill-opacity: ${workspaceFillOpacity} !important;
+`);
+    }
+
+    if (hasLottieWallpaper) {
+        rules.push(`
+#${LOTTIE_CONTAINER_ID} > svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
 `);
     }
@@ -342,7 +485,16 @@ const applyCustomTheme = theme => {
         removeStyleEl(STYLE_CSS_ID);
     }
 
-    ensureIconObserver(t.icons);
+    const lottieConfig = hasLottieWallpaper ? {
+        data: t.wallpaperLottieData,
+        signature: `${t.id}:${t.wallpaperLottieName}:${t.wallpaperSize}:${t.wallpaperLottieData.layers.length}:${t.wallpaperLottieData.op || ''}:${t.wallpaperLottieData.w || ''}x${t.wallpaperLottieData.h || ''}`,
+        opacity: t.wallpaperOpacity,
+        blur: t.wallpaperBlur,
+        size: t.wallpaperSize,
+        speed: t.wallpaperLottieSpeed || 1
+    } : null;
+
+    ensureDomSync(t.icons, lottieConfig);
     document.documentElement.setAttribute('data-uli-custom-theme', t.id);
 };
 
@@ -379,6 +531,7 @@ const disableActiveCustomAccent = () => {
 
 export {
     STORAGE_KEY,
+    isValidLottieData,
     createEmptyTheme,
     sanitizeTheme,
     loadCustomThemeStore,
