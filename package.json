@@ -1,7 +1,7 @@
 {
   "name": "uliblock",
   "description": "UliBlock — lightweight Scratch/TurboWarp editor fork with community extension gallery and offline cache.",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "license": "GPL-3.0",
   "author": {
     "name": "UliBlock Contributors (based on TurboWarp Desktop by Thomas Weber)",
@@ -17,6 +17,7 @@
     "electron:package:dir": "electron-builder --dir"
   },
   "dependencies": {
+    "lottie-web": "^5.13.0",
     "semver": "^7.7.3"
   },
   "devDependencies": {

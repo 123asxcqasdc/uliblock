@@ -1,7 +1,10 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
+import JSZip from '@turbowarp/jszip';
+import lottie from 'lottie-web';
 import Modal from '../../containers/modal.jsx';
+import {isValidLottieData} from '../../lib/themes/uli-custom-themes';
 import styles from './theme-editor-modal.css';
 
 const ICON_SLOTS = [
@@ -55,13 +58,72 @@ const compressWallpaperIfNeeded = dataUrl => new Promise(resolve => {
     img.src = dataUrl;
 });
 
+const readFileAsArrayBuffer = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+    reader.readAsArrayBuffer(file);
+});
+
+const parseLottieFile = async file => {
+    const lower = (file.name || '').toLowerCase();
+    if (lower.endsWith('.lottie')) {
+        const buffer = await readFileAsArrayBuffer(file);
+        const zip = await JSZip.loadAsync(buffer);
+        let animPath = null;
+        const manifestFile = zip.file('manifest.json');
+        if (manifestFile) {
+            try {
+                const manifest = JSON.parse(await manifestFile.async('string'));
+                if (manifest && Array.isArray(manifest.animations) && manifest.animations[0]) {
+                    const first = manifest.animations[0];
+                    const id = typeof first === 'string' ? first : first.id;
+                    if (id) {
+                        const candidates = [`animations/${id}.json`, `a/${id}.json`, `${id}.json`];
+                        animPath = candidates.find(p => zip.file(p)) || null;
+                    }
+                }
+            } catch (_e) {
+                // fallback below
+            }
+        }
+        if (!animPath) {
+            const jsonNames = Object.keys(zip.files).filter(name => (
+                !zip.files[name].dir &&
+                name.toLowerCase().endsWith('.json') &&
+                name.toLowerCase() !== 'manifest.json'
+            ));
+            animPath = jsonNames.find(n => n.startsWith('animations/')) || jsonNames[0] || null;
+        }
+        if (!animPath || !zip.file(animPath)) {
+            throw new Error('В архиве .lottie не найден JSON-файл анимации');
+        }
+        const parsed = JSON.parse(await zip.file(animPath).async('string'));
+        if (!isValidLottieData(parsed)) {
+            throw new Error('Файл внутри .lottie не является корректной анимацией Lottie');
+        }
+        return parsed;
+    }
+
+    const text = await readFileAsText(file);
+    const parsed = JSON.parse(text);
+    if (!isValidLottieData(parsed)) {
+        throw new Error('Выбранный JSON не является корректной анимацией Lottie');
+    }
+    return parsed;
+};
+
 class ThemeEditorModalComponent extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
-            tab: 'general'
+            tab: 'general',
+            wallpaperError: ''
         };
         this.wallpaperInputRef = React.createRef();
+        this.lottiePreviewRef = React.createRef();
+        this.lottiePreviewInstance = null;
+        this.lottiePreviewKey = '';
         this.cssInputRef = React.createRef();
         this.importJsonRef = React.createRef();
         this.iconInputRefs = {};
@@ -70,13 +132,106 @@ class ThemeEditorModalComponent extends React.Component {
         });
     }
 
+    componentDidMount () {
+        this.syncLottiePreview();
+    }
+
+    componentDidUpdate () {
+        this.syncLottiePreview();
+    }
+
+    componentWillUnmount () {
+        this.destroyLottiePreview();
+    }
+
+    destroyLottiePreview = () => {
+        if (this.lottiePreviewInstance) {
+            try {
+                this.lottiePreviewInstance.destroy();
+            } catch (_e) {
+                // ignore
+            }
+            this.lottiePreviewInstance = null;
+        }
+        this.lottiePreviewKey = '';
+    };
+
+    syncLottiePreview = () => {
+        const {draft} = this.props;
+        const {tab} = this.state;
+        const container = this.lottiePreviewRef.current;
+        const lottieData = draft && isValidLottieData(draft.wallpaperLottieData) ? draft.wallpaperLottieData : null;
+
+        if (tab !== 'wallpaper' || !container || !lottieData) {
+            this.destroyLottiePreview();
+            return;
+        }
+
+        const size = draft.wallpaperSize || 'cover';
+        const preserveAspectRatio = size === 'contain' ?
+            'xMidYMid meet' :
+            (size === 'repeat' ? 'none' : 'xMidYMid slice');
+        const nextKey = `${draft.id}:${draft.wallpaperLottieName}:${size}:${lottieData.layers.length}:${lottieData.op || ''}`;
+
+        if (this.lottiePreviewKey !== nextKey || !this.lottiePreviewInstance) {
+            this.destroyLottiePreview();
+            container.innerHTML = '';
+            try {
+                this.lottiePreviewInstance = lottie.loadAnimation({
+                    container,
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    animationData: JSON.parse(JSON.stringify(lottieData)),
+                    rendererSettings: {preserveAspectRatio}
+                });
+                this.lottiePreviewKey = nextKey;
+            } catch (_e) {
+                this.lottiePreviewInstance = null;
+            }
+        }
+
+        if (this.lottiePreviewInstance && typeof this.lottiePreviewInstance.setSpeed === 'function') {
+            try {
+                this.lottiePreviewInstance.setSpeed(draft.wallpaperLottieSpeed || 1);
+            } catch (_e) {
+                // ignore
+            }
+        }
+    };
+
     handleWallpaperFile = async e => {
         const file = e.target.files && e.target.files[0];
         e.target.value = '';
         if (!file) return;
+        const lower = (file.name || '').toLowerCase();
+        const isLottieFile = lower.endsWith('.json') || lower.endsWith('.lottie') || file.type === 'application/json';
+
+        if (isLottieFile) {
+            try {
+                const animationData = await parseLottieFile(file);
+                this.setState({wallpaperError: ''});
+                this.props.onUpdateDraft({
+                    wallpaperDataUrl: '',
+                    wallpaperLottieData: animationData,
+                    wallpaperLottieName: file.name || 'animation.json'
+                });
+            } catch (err) {
+                this.setState({
+                    wallpaperError: err && err.message ? err.message : 'Не удалось загрузить Lottie-анимацию'
+                });
+            }
+            return;
+        }
+
+        this.setState({wallpaperError: ''});
         const raw = await readFileAsDataUrl(file);
         const compressed = await compressWallpaperIfNeeded(raw);
-        this.props.onUpdateDraft({wallpaperDataUrl: compressed});
+        this.props.onUpdateDraft({
+            wallpaperDataUrl: compressed,
+            wallpaperLottieData: null,
+            wallpaperLottieName: ''
+        });
     };
 
     handleIconFile = slotKey => async e => {
@@ -335,19 +490,39 @@ class ThemeEditorModalComponent extends React.Component {
                                     {tab === 'wallpaper' && (
                                         <div className={styles.section}>
                                             <p className={styles.hint}>
-                                                Фоновое изображение отображается на рабочей области блоков, как обои в Telegram.
+                                                Фоновое изображение или живая анимация Lottie (.json / .lottie) отображается на рабочей области блоков, как обои в Telegram.
                                             </p>
 
                                             <div
                                                 className={styles.wallpaperPreview}
-                                                style={draft.wallpaperDataUrl ? {
+                                                style={!draft.wallpaperLottieData && draft.wallpaperDataUrl ? {
                                                     backgroundImage: `url("${draft.wallpaperDataUrl}")`,
                                                     backgroundSize: draft.wallpaperSize === 'repeat' ? 'auto' : draft.wallpaperSize,
                                                     backgroundRepeat: draft.wallpaperSize === 'repeat' ? 'repeat' : 'no-repeat'
                                                 } : undefined}
                                             >
-                                                {!draft.wallpaperDataUrl && 'Обои не выбраны'}
+                                                {draft.wallpaperLottieData ? (
+                                                    <React.Fragment>
+                                                        <div
+                                                            ref={this.lottiePreviewRef}
+                                                            className={styles.lottiePreviewCanvas}
+                                                            style={{
+                                                                opacity: draft.wallpaperOpacity || 0.35,
+                                                                filter: draft.wallpaperBlur ? `blur(${draft.wallpaperBlur}px)` : undefined
+                                                            }}
+                                                        />
+                                                        <span className={styles.wallpaperBadge}>
+                                                            🎬 Живые обои Lottie{draft.wallpaperLottieName ? ` · ${draft.wallpaperLottieName}` : ''}
+                                                        </span>
+                                                    </React.Fragment>
+                                                ) : (
+                                                    !draft.wallpaperDataUrl && 'Обои не выбраны'
+                                                )}
                                             </div>
+
+                                            {this.state.wallpaperError && (
+                                                <div className={styles.errorNote}>{this.state.wallpaperError}</div>
+                                            )}
 
                                             <div className={styles.fieldRow}>
                                                 <button
@@ -355,13 +530,20 @@ class ThemeEditorModalComponent extends React.Component {
                                                     className={classNames(styles.btn, styles.btnPrimary)}
                                                     onClick={() => this.wallpaperInputRef.current && this.wallpaperInputRef.current.click()}
                                                 >
-                                                    Выбрать изображение...
+                                                    Выбрать картинку или Lottie...
                                                 </button>
-                                                {draft.wallpaperDataUrl && (
+                                                {(draft.wallpaperDataUrl || draft.wallpaperLottieData) && (
                                                     <button
                                                         type="button"
                                                         className={classNames(styles.btn, styles.btnDanger)}
-                                                        onClick={() => onUpdateDraft({wallpaperDataUrl: ''})}
+                                                        onClick={() => {
+                                                            this.setState({wallpaperError: ''});
+                                                            onUpdateDraft({
+                                                                wallpaperDataUrl: '',
+                                                                wallpaperLottieData: null,
+                                                                wallpaperLottieName: ''
+                                                            });
+                                                        }}
                                                     >
                                                         Убрать обои
                                                     </button>
@@ -369,7 +551,7 @@ class ThemeEditorModalComponent extends React.Component {
                                                 <input
                                                     ref={this.wallpaperInputRef}
                                                     type="file"
-                                                    accept="image/*"
+                                                    accept="image/*,.json,.lottie,application/json"
                                                     style={{display: 'none'}}
                                                     onChange={this.handleWallpaperFile}
                                                 />
@@ -402,6 +584,22 @@ class ThemeEditorModalComponent extends React.Component {
                                                     onChange={e => onUpdateDraft({wallpaperBlur: Number(e.target.value)})}
                                                 />
                                             </div>
+
+                                            {draft.wallpaperLottieData && (
+                                                <div className={styles.fieldRow}>
+                                                    <span className={styles.fieldLabel}>
+                                                        Скорость Lottie: {(draft.wallpaperLottieSpeed || 1).toFixed(2)}x
+                                                    </span>
+                                                    <input
+                                                        type="range"
+                                                        min="0.25"
+                                                        max="2.5"
+                                                        step="0.25"
+                                                        value={draft.wallpaperLottieSpeed || 1}
+                                                        onChange={e => onUpdateDraft({wallpaperLottieSpeed: Number(e.target.value)})}
+                                                    />
+                                                </div>
+                                            )}
 
                                             <div className={styles.fieldRow}>
                                                 <span className={styles.fieldLabel}>Режим заполнения:</span>

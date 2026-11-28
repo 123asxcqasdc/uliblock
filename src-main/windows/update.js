@@ -2,7 +2,7 @@ const AbstractWindow = require('./abstract');
 const {getLocale, getStrings} = require('../l10n');
 const {APP_NAME} = require('../brand');
 const openExternal = require('../open-external');
-const {startSelfUpdate} = require('../auto-updater');
+const {startSelfUpdate, scheduleUpdateAfterWork} = require('../auto-updater');
 
 let openUpdateWindow = null;
 
@@ -12,6 +12,7 @@ class UpdateWindow extends AbstractWindow {
 
     openUpdateWindow = this;
     this.isUpdating = false;
+    this.isDeferred = false;
 
     this.window.setTitle(`Обновление ${APP_NAME}`);
 
@@ -34,17 +35,17 @@ class UpdateWindow extends AbstractWindow {
       };
     });
 
+    const sendProgress = (payload) => {
+      if (!this.window.isDestroyed()) {
+        this.window.webContents.send('update-progress', payload);
+      }
+    };
+
     this.ipc.handle('start-update', async () => {
       if (this.isUpdating) {
         return {ok: true};
       }
       this.isUpdating = true;
-
-      const sendProgress = (payload) => {
-        if (!this.window.isDestroyed()) {
-          this.window.webContents.send('update-progress', payload);
-        }
-      };
 
       try {
         await startSelfUpdate({
@@ -60,6 +61,37 @@ class UpdateWindow extends AbstractWindow {
         return {ok: true};
       } catch (err) {
         this.isUpdating = false;
+        const message = err && err.message ? err.message : String(err);
+        sendProgress({error: message});
+        return {ok: false, error: message};
+      }
+    });
+
+    this.ipc.handle('schedule-update-after-work', async () => {
+      if (this.isUpdating || this.isDeferred) {
+        return {ok: true};
+      }
+      this.isDeferred = true;
+
+      try {
+        await scheduleUpdateAfterWork({
+          version: latestVersion,
+          tag: tag || `v${latestVersion}`,
+          onStatus: (status) => {
+            sendProgress({status});
+          },
+          onProgress: (progress) => {
+            sendProgress(progress);
+          }
+        });
+        sendProgress({
+          status: 'Установщик скачан! Он запустится автоматически, когда вы закроете все окна UliBlock.',
+          percent: 100,
+          deferredReady: true
+        });
+        return {ok: true};
+      } catch (err) {
+        this.isDeferred = false;
         const message = err && err.message ? err.message : String(err);
         sendProgress({error: message});
         return {ok: false, error: message};
@@ -85,7 +117,9 @@ class UpdateWindow extends AbstractWindow {
       if (this.isUpdating) {
         return;
       }
-      ignore(Boolean(permanently));
+      if (!this.isDeferred) {
+        ignore(Boolean(permanently));
+      }
       this.window.destroy();
     });
 
@@ -104,8 +138,8 @@ class UpdateWindow extends AbstractWindow {
 
   getDimensions () {
     return {
-      width: 560,
-      height: 480
+      width: 640,
+      height: 500
     };
   }
 
@@ -119,6 +153,12 @@ class UpdateWindow extends AbstractWindow {
 
   static isOpen () {
     return Boolean(openUpdateWindow && !openUpdateWindow.window.isDestroyed());
+  }
+
+  static closeIfOpen () {
+    if (openUpdateWindow && !openUpdateWindow.window.isDestroyed()) {
+      openUpdateWindow.window.destroy();
+    }
   }
 
   static updateAvailable (details) {

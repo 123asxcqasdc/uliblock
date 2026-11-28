@@ -15,6 +15,7 @@ class UliCleanupModal extends React.Component {
         super(props);
         this.state = {
             scanStats: scanProjectCleanupStats(props.vm),
+            showSettings: false,
             options: {
                 removeHatless: true,
                 removeEmptyHats: true,
@@ -28,8 +29,15 @@ class UliCleanupModal extends React.Component {
         };
 
         this.handleToggleOption = this.handleToggleOption.bind(this);
+        this.handleToggleSettings = this.handleToggleSettings.bind(this);
         this.handleRunCleanup = this.handleRunCleanup.bind(this);
         this.handleClose = this.handleClose.bind(this);
+    }
+
+    handleToggleSettings () {
+        this.setState(prev => ({
+            showSettings: !prev.showSettings
+        }));
     }
 
     handleToggleOption (key) {
@@ -85,11 +93,13 @@ class UliCleanupModal extends React.Component {
             <CleanupModalComponent
                 isRu={isRu}
                 scanStats={this.state.scanStats}
+                showSettings={this.state.showSettings}
                 options={this.state.options}
                 busy={this.state.busy}
                 progress={this.state.progress}
                 resultSummary={this.state.resultSummary}
                 errorMessage={this.state.errorMessage}
+                onToggleSettings={this.handleToggleSettings}
                 onToggleOption={this.handleToggleOption}
                 onRunCleanup={this.handleRunCleanup}
                 onClose={this.handleClose}
