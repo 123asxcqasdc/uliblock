@@ -3,50 +3,70 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UliBlock — Облегчённый офлайн-редактор Scratch / TurboWarp</title>
-  <meta name="description" content="UliBlock — открытый форк TurboWarp Desktop с зелёной темой, галереей расширений с офлайн-кэшем, редактором PenguinMod-Paint и встроенным Uli Packager.">
-  <meta name="theme-color" content="#22a630">
+  <title>UliBlock — быстрый офлайн-редактор Scratch и TurboWarp для Windows и Linux</title>
+  <meta name="description" content="UliBlock — открытый офлайн-редактор проектов Scratch на базе TurboWarp Desktop: 12 галерей расширений с кэшем, PenguinMod-Paint, встроенный Uli Packager, SB3 Explorer и живые Lottie-обои. / Open-source offline Scratch & TurboWarp Desktop fork with cached community extensions, PenguinMod-Paint, built-in packager, SB3 Explorer, and Lottie live wallpapers.">
+  <meta name="theme-color" content="#1f9a2c">
+  <link rel="canonical" href="https://123asxcqasdc.github.io/uliblock/">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="alternate icon" href="favicon.ico">
+
+  <!-- Open Graph / Social Meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://123asxcqasdc.github.io/uliblock/">
+  <meta property="og:title" content="UliBlock — Offline Scratch & TurboWarp Desktop Editor">
+  <meta property="og:description" content="Открытый форк TurboWarp Desktop для Windows и Linux: 12 галерей расширений с офлайн-кэшем, PenguinMod-Paint, Uli Packager, SB3 Explorer и живые Lottie-обои.">
+  <meta property="og:image" content="https://123asxcqasdc.github.io/uliblock/screenshot.png">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="UliBlock — Fast Offline Scratch & TurboWarp Editor">
+  <meta name="twitter:description" content="12 cached extension galleries, PenguinMod-Paint, built-in packager, SB3 Explorer, and Lottie wallpapers for Windows & Linux.">
+  <meta name="twitter:image" content="https://123asxcqasdc.github.io/uliblock/screenshot.png">
+
   <style>
     :root {
-      --accent: #22a630;
-      --accent-dark: #177421;
-      --accent-hover: #1b8c27;
-      --accent-soft: #e9f8eb;
-      --accent-border: #b8e6be;
+      --accent: #1d9629;
+      --accent-strong: #157520;
+      --accent-hover: #178022;
+      --accent-soft: #eaf7ec;
+      --accent-border: #b3e1b9;
       --bg: #ffffff;
-      --bg-alt: #f4f9f5;
+      --bg-alt: #f4f8f5;
       --card: #ffffff;
-      --text: #1c2420;
-      --text-muted: #4f5f56;
-      --border: #dce8de;
-      --shadow: 0 10px 30px rgba(23, 116, 33, 0.08);
-      --warn-bg: #fff8e6;
-      --warn-border: #e6a817;
-      --warn-text: #5c4000;
-      --code-bg: #eef5ef;
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      --text: #141d17;
+      --text-muted: #49594f;
+      --border: #d8e5db;
+      --shadow-sm: 0 2px 10px rgba(20, 29, 23, 0.05);
+      --shadow: 0 12px 32px rgba(21, 117, 32, 0.10);
+      --warn-bg: #fff8e5;
+      --warn-border: #d99b16;
+      --warn-text: #4d3500;
+      --code-bg: #ecf4ee;
+      --focus-ring: #0f5c18;
+      --radius: 14px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, Arial, sans-serif;
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --accent: #25b835;
-        --accent-dark: #177421;
-        --accent-hover: #2dd13f;
-        --accent-soft: #132817;
-        --accent-border: #225429;
-        --bg: #101411;
-        --bg-alt: #161d18;
-        --card: #18201a;
-        --text: #edf5ef;
-        --text-muted: #a2b5a8;
-        --border: #27382b;
-        --shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
-        --warn-bg: #2a210c;
-        --warn-border: #996d0f;
-        --warn-text: #f7dfa3;
-        --code-bg: #1f2b22;
+        --accent: #27be37;
+        --accent-strong: #1a8f27;
+        --accent-hover: #32d143;
+        --accent-soft: #132917;
+        --accent-border: #24572c;
+        --bg: #0f1411;
+        --bg-alt: #151c17;
+        --card: #19221c;
+        --text: #eef6f0;
+        --text-muted: #a4b7aa;
+        --border: #283a2d;
+        --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.3);
+        --shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+        --warn-bg: #2a210d;
+        --warn-border: #9c7112;
+        --warn-text: #f7e1a6;
+        --code-bg: #202d24;
+        --focus-ring: #6ef07c;
       }
     }
 
@@ -54,11 +74,17 @@
       box-sizing: border-box;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.55;
+      line-height: 1.6;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
     }
 
     a {
@@ -69,18 +95,43 @@
       text-decoration: underline;
     }
 
+    :focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 12px;
+      top: -60px;
+      z-index: 100;
+      background: #ffffff;
+      color: #105a18;
+      font-weight: 700;
+      padding: 10px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+    .skip-link:focus {
+      top: 12px;
+    }
+
     .container {
-      max-width: 1040px;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 0 20px;
     }
 
-    /* Top Nav */
-    header {
-      background: linear-gradient(135deg, #22a630 0%, #177421 100%);
+    /* Header & Hero */
+    .site-header {
+      background: linear-gradient(135deg, #1f9b2c 0%, #13691d 100%);
       color: #ffffff;
-      padding: 18px 0 46px;
-      border-bottom: 4px solid rgba(255, 255, 255, 0.14);
+      padding: 18px 0 56px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .site-header :focus-visible {
+      outline-color: #ffffff;
     }
 
     .nav {
@@ -89,25 +140,32 @@
       justify-content: space-between;
       gap: 16px;
       flex-wrap: wrap;
-      margin-bottom: 34px;
+      margin-bottom: 38px;
     }
 
     .brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       color: #ffffff;
       font-weight: 800;
-      font-size: 22px;
+      font-size: 21px;
       letter-spacing: -0.02em;
     }
     .brand:hover {
       text-decoration: none;
     }
     .brand img {
-      width: 38px;
-      height: 38px;
-      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.2));
+      width: 36px;
+      height: 36px;
+      display: block;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
     }
 
     .nav-links {
@@ -116,27 +174,51 @@
       gap: 18px;
       flex-wrap: wrap;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 14.5px;
     }
     .nav-links a {
-      color: rgba(255, 255, 255, 0.92);
+      color: rgba(255, 255, 255, 0.94);
     }
     .nav-links a:hover {
       color: #ffffff;
       text-decoration: underline;
     }
 
-    /* Hero */
+    .lang-switch {
+      display: inline-flex;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 999px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .lang-btn {
+      border: 0;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.88);
+      font: inherit;
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .lang-btn.active {
+      background: #ffffff;
+      color: #12611b;
+    }
+
     .hero {
       display: grid;
-      grid-template-columns: 1.05fr 1fr;
-      gap: 32px;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 34px;
       align-items: center;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
       .hero {
         grid-template-columns: 1fr;
+        gap: 26px;
       }
     }
 
@@ -144,7 +226,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.16);
       border: 1px solid rgba(255, 255, 255, 0.28);
       border-radius: 999px;
       padding: 5px 13px;
@@ -154,66 +236,80 @@
     }
 
     .hero h1 {
-      margin: 0 0 12px;
-      font-size: clamp(30px, 4.5vw, 44px);
+      margin: 0 0 14px;
+      font-size: clamp(29px, 4.2vw, 44px);
       line-height: 1.12;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.025em;
     }
 
-    .hero p {
+    .hero-sub {
       margin: 0 0 22px;
       font-size: 16.5px;
-      color: rgba(255, 255, 255, 0.93);
+      color: rgba(255, 255, 255, 0.94);
+      max-width: 560px;
     }
 
     .hero-actions {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
+      margin-bottom: 18px;
     }
 
-    .btn-hero {
+    .btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      background: #ffffff;
-      color: #156d1f;
-      font-weight: 800;
+      font-weight: 700;
       font-size: 15px;
-      padding: 12px 22px;
+      padding: 12px 20px;
       border-radius: 10px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .btn-hero:hover {
+    .btn:hover {
       text-decoration: none;
       transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
     }
 
-    .btn-hero-secondary {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 14.5px;
-      padding: 12px 18px;
-      border-radius: 10px;
+    .btn-hero-primary {
+      background: #ffffff;
+      color: #12611b;
+      font-weight: 800;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.20);
     }
-    .btn-hero-secondary:hover {
+    .btn-hero-primary:hover {
+      background: #f4fbf5;
+    }
+
+    .btn-hero-outline {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.36);
+      color: #ffffff;
+    }
+    .btn-hero-outline:hover {
       background: rgba(255, 255, 255, 0.24);
-      text-decoration: none;
+    }
+
+    .hero-facts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.88);
+      padding: 0;
+      margin: 0;
+      list-style: none;
     }
 
     .screenshot-frame {
       background: rgba(0, 0, 0, 0.25);
-      border: 2px solid rgba(255, 255, 255, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.28);
       border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+      box-shadow: 0 20px 44px rgba(0, 0, 0, 0.34);
     }
     .screenshot-frame img {
       display: block;
@@ -223,7 +319,7 @@
 
     /* Sections */
     section {
-      padding: 46px 0;
+      padding: 56px 0;
     }
     section.alt {
       background: var(--bg-alt);
@@ -231,23 +327,365 @@
       border-bottom: 1px solid var(--border);
     }
 
+    .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
     h2 {
-      margin: 0 0 10px;
-      font-size: 28px;
+      margin: 0 0 8px;
+      font-size: clamp(24px, 3vw, 30px);
       letter-spacing: -0.02em;
+      line-height: 1.2;
     }
     .section-sub {
-      margin: 0 0 26px;
+      margin: 0;
       color: var(--text-muted);
       font-size: 15.5px;
+      max-width: 680px;
     }
+
+    /* Benefits grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 600px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .feature-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .feature-card h3 {
+      margin: 4px 0 0;
+      font-size: 17px;
+      line-height: 1.3;
+    }
+    .feature-card p {
+      margin: 0;
+      font-size: 14.5px;
+      color: var(--text-muted);
+    }
+
+    /* Interactive Demo / Showcase */
+    .showcase-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .showcase-tab {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 9px 15px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .showcase-tab:hover {
+      border-color: var(--accent);
+    }
+    .showcase-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .showcase-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      align-items: center;
+    }
+    @media (max-width: 860px) {
+      .showcase-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .showcase-visual {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      min-height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .showcase-visual img.real-shot {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .showcase-info h3 {
+      margin: 0 0 10px;
+      font-size: 21px;
+    }
+    .showcase-info p {
+      margin: 0 0 14px;
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .showcase-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text-muted);
+      font-size: 14.5px;
+    }
+    .showcase-list li {
+      margin-bottom: 6px;
+    }
+
+    /* Animated Demo Mockups (lightweight CSS/SVG) */
+    .demo-stage {
+      width: 100%;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .demo-lottie-box {
+      position: relative;
+      height: 220px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #132c19 0%, #1b4d24 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+    .demo-blob {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.45;
+      animation: floatBlob 5.5s ease-in-out infinite;
+    }
+    .demo-blob.b1 {
+      width: 110px;
+      height: 110px;
+      background: #42e858;
+      top: -20px;
+      left: 12%;
+    }
+    .demo-blob.b2 {
+      width: 82px;
+      height: 82px;
+      background: #ffa300;
+      bottom: -14px;
+      right: 16%;
+      animation-delay: -2s;
+    }
+    .demo-blob.b3 {
+      width: 54px;
+      height: 54px;
+      background: #67d6ff;
+      top: 38%;
+      right: 26%;
+      animation-delay: -3.5s;
+    }
+    @keyframes floatBlob {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(12px, -16px) scale(1.12); }
+    }
+    .demo-blocks-overlay {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(16, 22, 18, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #ffffff;
+      font-size: 12.5px;
+      font-weight: 700;
+      width: 86%;
+    }
+    .demo-block {
+      padding: 6px 10px;
+      border-radius: 6px;
+      width: fit-content;
+    }
+    .demo-block.hat { background: #ffab19; color: #241600; }
+    .demo-block.motion { background: #4c97ff; }
+    .demo-block.looks { background: #9966ff; }
+
+    .demo-cleanup-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      padding: 18px;
+    }
+    .demo-cleanup-snail {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 135px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .demo-columns {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .demo-col {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .demo-col-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .demo-pill {
+      height: 14px;
+      border-radius: 4px;
+      background: #4c97ff;
+      animation: pulseCol 3.2s ease-in-out infinite;
+    }
+    .demo-pill.wide {
+      background: #ffab19;
+    }
+    @keyframes pulseCol {
+      0%, 100% { opacity: 0.78; }
+      50% { opacity: 1; }
+    }
+
+    .demo-tree {
+      width: 100%;
+      padding: 18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.75;
+    }
+    .demo-tree-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .demo-tree-badge {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 8px;
+      margin-left: 6px;
+      font-family: inherit;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .demo-blob,
+      .demo-pill {
+        animation: none;
+      }
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    /* Comparison table */
+    .table-wrap {
+      overflow-x: auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+    }
+    table.compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+      font-size: 14.5px;
+    }
+    .compare-table th,
+    .compare-table td {
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+    .compare-table thead th {
+      background: var(--bg-alt);
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .compare-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+    .compare-table th.uli-col,
+    .compare-table td.uli-col {
+      background: var(--accent-soft);
+      font-weight: 700;
+    }
+    .yes { color: var(--accent); font-weight: 800; }
+    .no { color: var(--text-muted); }
 
     /* Download Box */
     .download-card {
       background: var(--card);
       border: 2px solid var(--accent-border);
       border-radius: 16px;
-      padding: 26px;
+      padding: 24px;
       box-shadow: var(--shadow);
     }
 
@@ -255,7 +693,7 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 16px;
     }
@@ -267,12 +705,12 @@
       border: 2px solid var(--border);
       background: var(--bg-alt);
       color: var(--text);
+      font: inherit;
       font-weight: 700;
       font-size: 15px;
       padding: 10px 20px;
       border-radius: 10px;
       cursor: pointer;
-      transition: all 0.15s ease;
     }
     .os-tab:hover {
       border-color: var(--accent);
@@ -304,12 +742,12 @@
       border: 2px solid var(--border);
       background: var(--bg);
       color: var(--text);
+      font: inherit;
       font-weight: 600;
       font-size: 14px;
       padding: 9px 15px;
       border-radius: 10px;
       cursor: pointer;
-      transition: all 0.15s ease;
       text-align: left;
     }
     .pill-btn:hover {
@@ -318,7 +756,6 @@
     .pill-btn.active {
       background: var(--accent-soft);
       border-color: var(--accent);
-      color: var(--text);
       box-shadow: inset 0 0 0 1px var(--accent);
     }
     .pill-btn small {
@@ -334,9 +771,8 @@
       border: 1.5px solid var(--accent-border);
       border-radius: 12px;
       padding: 20px;
-      margin-top: 18px;
+      margin-top: 16px;
     }
-
     .download-result-header {
       display: flex;
       align-items: center;
@@ -344,7 +780,6 @@
       gap: 16px;
       flex-wrap: wrap;
     }
-
     .download-meta h3 {
       margin: 0 0 4px;
       font-size: 19px;
@@ -356,22 +791,30 @@
     }
 
     .btn-download {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
       background: var(--accent);
       color: #ffffff;
       font-weight: 800;
       font-size: 15.5px;
-      padding: 13px 24px;
+      padding: 13px 22px;
       border-radius: 10px;
-      box-shadow: 0 5px 16px rgba(34, 166, 48, 0.28);
-      transition: background 0.15s ease, transform 0.15s ease;
+      box-shadow: 0 5px 16px rgba(29, 150, 41, 0.28);
     }
     .btn-download:hover {
       background: var(--accent-hover);
-      text-decoration: none;
-      transform: translateY(-1px);
+      color: #ffffff;
+    }
+
+    .btn-secondary-inline {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .btn-secondary-inline:hover {
+      border-color: var(--accent);
     }
 
     .install-steps {
@@ -383,85 +826,53 @@
       font-size: 13.5px;
       color: var(--text-muted);
     }
-    .install-steps li {
-      margin-bottom: 5px;
-    }
-    .install-steps li:last-child {
-      margin-bottom: 0;
-    }
+    .install-steps li { margin-bottom: 5px; }
+    .install-steps li:last-child { margin-bottom: 0; }
+
     code {
       background: var(--code-bg);
       padding: 2px 6px;
       border-radius: 5px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.92em;
+      font-size: 0.9em;
+    }
+
+    .security-box {
+      background: var(--warn-bg);
+      border: 1.5px solid var(--warn-border);
+      color: var(--warn-text);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-top: 20px;
+      font-size: 14px;
     }
 
     .hidden {
       display: none !important;
     }
 
-    /* Features Grid */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 18px;
-    }
-
-    .feature-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
-    }
-    .feature-icon {
-      font-size: 26px;
-      margin-bottom: 8px;
-      display: inline-block;
-    }
-    .feature-card h3 {
-      margin: 0 0 6px;
-      font-size: 17px;
-    }
-    .feature-card p {
-      margin: 0;
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    /* Security box */
-    .security-box {
-      background: var(--warn-bg);
-      border: 1.5px solid var(--warn-border);
-      color: var(--warn-text);
-      border-radius: 12px;
-      padding: 16px 20px;
-      margin-top: 24px;
-      font-size: 14px;
-    }
-
-    /* Changelog */
+    /* Changelog & FAQ */
     .changelog-item {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 18px 22px;
-      margin-bottom: 14px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
     }
     .changelog-item h3 {
       margin: 0 0 8px;
-      font-size: 18px;
+      font-size: 17px;
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
     .ver-pill {
       background: var(--accent);
       color: #ffffff;
       font-size: 12px;
       font-weight: 800;
-      padding: 3px 9px;
+      padding: 2px 9px;
       border-radius: 999px;
     }
     .changelog-item ul {
@@ -470,31 +881,46 @@
       font-size: 14.5px;
       color: var(--text-muted);
     }
-    .changelog-item li {
-      margin-bottom: 4px;
-    }
+    .changelog-item li { margin-bottom: 4px; }
 
-    /* Mascot banner */
-    .mascot-row {
-      display: flex;
-      align-items: center;
-      gap: 18px;
+    details.faq-item,
+    details.older-releases {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 18px 22px;
-      margin-top: 22px;
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
     }
-    .mascot-row img {
-      width: 68px;
-      height: auto;
-      flex-shrink: 0;
+    details.faq-item summary,
+    details.older-releases summary {
+      font-weight: 700;
+      font-size: 15.5px;
+      cursor: pointer;
+      list-style-position: outside;
+    }
+    details.faq-item p {
+      margin: 10px 0 0;
+      font-size: 14.5px;
+      color: var(--text-muted);
+    }
+
+    .cta-strip {
+      margin-top: 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
     }
 
     /* Footer */
     footer {
       border-top: 1px solid var(--border);
-      padding: 28px 0 38px;
+      padding: 30px 0 40px;
       font-size: 13.5px;
       color: var(--text-muted);
     }
@@ -503,342 +929,583 @@
       justify-content: space-between;
       gap: 20px;
       flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .footer-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
-  <header>
+  <a class="skip-link" href="#main-content" data-i18n="skip">Перейти к содержанию</a>
+
+  <header class="site-header">
     <div class="container">
-      <nav class="nav">
+      <nav class="nav" aria-label="Основная навигация">
         <a class="brand" href="#">
-          <img src="icon.svg" alt="UliBlock">
+          <img src="icon.svg" alt="UliBlock" width="36" height="36">
           <span>UliBlock</span>
         </a>
-        <div class="nav-links">
-          <a href="#download">Скачать</a>
-          <a href="#features">Возможности</a>
-          <a href="#changelog">Изменения</a>
-          <a href="https://123asxcqasdc.github.io/turbowarp-extensions/" target="_blank" rel="noreferrer">Галерея расширений</a>
-          <a href="https://github.com/123asxcqasdc/uliblock" target="_blank" rel="noreferrer">GitHub</a>
+
+        <div class="nav-right">
+          <div class="nav-links">
+            <a href="#features" data-i18n="navFeatures">Преимущества</a>
+            <a href="#showcase" data-i18n="navShowcase">Функции</a>
+            <a href="#compare" data-i18n="navCompare">Сравнение</a>
+            <a href="#download" data-i18n="navDownload">Скачать</a>
+            <a href="#faq" data-i18n="navFaq">FAQ</a>
+            <a href="https://github.com/123asxcqasdc/uliblock/releases" target="_blank" rel="noreferrer" data-i18n="navReleases">Релизы</a>
+            <a href="https://github.com/123asxcqasdc/uliblock" target="_blank" rel="noreferrer">GitHub</a>
+          </div>
+
+          <div class="lang-switch" role="group" aria-label="Язык сайта / Language">
+            <button type="button" class="lang-btn active" id="lang-ru" aria-pressed="true">RU</button>
+            <button type="button" class="lang-btn" id="lang-en" aria-pressed="false">EN</button>
+          </div>
         </div>
       </nav>
 
       <div class="hero">
         <div>
-          <div class="hero-badge">🐌 Версия v1.6.0 · Windows &amp; Linux · GPL-3.0</div>
-          <h1>Лёгкий и быстрый редактор для проектов Scratch</h1>
-          <p>
-            <strong>UliBlock</strong> — открытый форк TurboWarp Desktop с фирменным зелёным оформлением, встроенной галереей расширений сообщества с офлайн-кэшем, графическим редактором PenguinMod-Paint, встроенным Uli Packager и проводником проекта SB3 Explorer.
+          <div class="hero-badge" data-i18n="heroBadge">v1.6.0 · Windows и Linux · GNU GPL-3.0</div>
+          <h1 data-i18n="heroTitle">Быстрый офлайн-редактор Scratch без лишнего балласта</h1>
+          <p class="hero-sub" data-i18n="heroSub">
+            Открытый форк TurboWarp Desktop: 12 галерей расширений с офлайн-кэшем, редактор костюмов PenguinMod-Paint, упаковщик в EXE и HTML, проводник проекта SB3 Explorer и живые Lottie-обои.
           </p>
+
           <div class="hero-actions">
-            <a class="btn-hero" href="#download">⬇ Скачать UliBlock v1.6.0</a>
-            <a class="btn-hero-secondary" href="https://123asxcqasdc.github.io/turbowarp-extensions/" target="_blank" rel="noreferrer">🧩 Галерея расширений</a>
+            <a class="btn btn-hero-primary" href="#download" data-i18n="ctaDownload">⬇ Скачать v1.6.0</a>
+            <a class="btn btn-hero-outline" href="https://github.com/123asxcqasdc/uliblock/releases" target="_blank" rel="noreferrer" data-i18n="ctaReleases">Релизы</a>
+            <a class="btn btn-hero-outline" href="https://github.com/123asxcqasdc/uliblock" target="_blank" rel="noreferrer">GitHub</a>
           </div>
+
+          <ul class="hero-facts">
+            <li data-i18n="fact1">✓ Установка в 1 клик (MSI / .deb / .rpm / AppImage)</li>
+            <li data-i18n="fact2">✓ Без телеметрии, cookies и аккаунта</li>
+            <li data-i18n="fact3">✓ Совместим с проектами .sb3</li>
+          </ul>
         </div>
 
         <div class="screenshot-frame">
-          <img src="screenshot.png" alt="Скриншот редактора UliBlock">
+          <img
+            src="screenshot.png"
+            alt="Интерфейс редактора UliBlock: зелёная панель инструментов, блоки скриптов, сцена и спрайты"
+            width="1412"
+            height="959"
+          >
         </div>
       </div>
     </div>
   </header>
 
-  <main>
-    <section id="download">
+  <main id="main-content">
+    <!-- Преимущества -->
+    <section id="features">
       <div class="container">
-        <h2>Скачать UliBlock v1.6.0</h2>
-        <p class="section-sub">Выберите операционную систему — мы подберём самый удобный вариант установки.</p>
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="featuresTitle">Что вы получаете в UliBlock</h2>
+            <p class="section-sub" data-i18n="featuresSub">Всё, что нужно для разработки игр и анимаций на базе Scratch офлайн — без тяжёлых встроенных библиотек и лишних окон.</p>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">🧩</span>
+            <h3 data-i18n="feat1Title">12 галерей расширений с кэшем</h3>
+            <p data-i18n="feat1Desc">Встроенный каталог расширений сообщества (12 источников, 14 категорий) автоматически сохраняет расширения на диск для работы без интернета с указанием автора.</p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">🎨</span>
+            <h3 data-i18n="feat2Title">PenguinMod-Paint и 14 шрифтов</h3>
+            <p data-i18n="feat2Desc">Расширенный векторный и растровый редактор костюмов в зелёной теме с дополнительными инструментами рисования и 7 новыми шрифтами.</p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">📦</span>
+            <h3 data-i18n="feat3Title">Встроенный Uli Packager</h3>
+            <p data-i18n="feat3Desc">Собирайте проекты в самостоятельный HTML-файл, ZIP-архив или приложение для ПК прямо из меню редактора без браузера.</p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">🗂️</span>
+            <h3 data-i18n="feat4Title">SB3 Explorer и Улитка-уборщик</h3>
+            <p data-i18n="feat4Desc">Иерархическое дерево файлов проекта, выборочный экспорт спрайтов <code>.sprite3</code>, отправка скрипта сразу в несколько спрайтов и глобальная очистка кода.</p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">✨</span>
+            <h3 data-i18n="feat5Title">Редактор тем и живые Lottie-обои</h3>
+            <p data-i18n="feat5Desc">Настраивайте свой акцентный цвет, подключайте свой CSS, меняйте иконки и ставьте анимированные обои <code>.json</code> и <code>.lottie</code> на фон рабочей области.</p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">⚡</span>
+            <h3 data-i18n="feat6Title">«Обновить после работы» и лёгкий вес</h3>
+            <p data-i18n="feat6Desc">Удалены лишние стандартные ассеты, а автообновление умеет скачивать установщик в фоне и запускаться только после закрытия всех окон.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Скриншоты и демонстрация функций -->
+    <section id="showcase" class="alt">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="showcaseTitle">Ключевые функции в деле</h2>
+            <p class="section-sub" data-i18n="showcaseSub">Переключайте вкладки, чтобы посмотреть основные возможности редактора и инструментов UliBlock.</p>
+          </div>
+          <a class="btn btn-secondary-inline" href="#download" data-i18n="ctaGoDownload">Перейти к загрузке ↓</a>
+        </div>
+
+        <div class="showcase-tabs" role="tablist" aria-label="Демонстрация функций UliBlock">
+          <button type="button" class="showcase-tab active" role="tab" aria-selected="true" data-demo="editor" data-i18n="demoTabEditor">Рабочая среда</button>
+          <button type="button" class="showcase-tab" role="tab" aria-selected="false" data-demo="lottie" data-i18n="demoTabLottie">Живые Lottie-обои</button>
+          <button type="button" class="showcase-tab" role="tab" aria-selected="false" data-demo="cleanup" data-i18n="demoTabCleanup">Улитка-уборщик 5×N</button>
+          <button type="button" class="showcase-tab" role="tab" aria-selected="false" data-demo="explorer" data-i18n="demoTabExplorer">SB3 Explorer</button>
+        </div>
+
+        <!-- Demo 1: Editor -->
+        <div class="showcase-panel" id="demo-editor" role="tabpanel">
+          <div class="showcase-visual">
+            <img
+              class="real-shot"
+              src="screenshot.png"
+              alt="Скриншот редактора UliBlock с панелью блоков, сценой, координатами мыши и спрайтами"
+              width="1412"
+              height="959"
+              loading="lazy"
+            >
+          </div>
+          <div class="showcase-info">
+            <h3 data-i18n="demoEditorTitle">Быстрый интерфейс без визуального шума</h3>
+            <p data-i18n="demoEditorDesc">Фирменная зелёная тема, встроенные инструменты разработчика (поиск по блокам Ctrl+F, координаты курсора, отладчик) и удобное переключение сцен и спрайтов.</p>
+            <ul class="showcase-list">
+              <li data-i18n="demoEditorB1">Семь полезных аддонов включены сразу — настраиваются в один клик.</li>
+              <li data-i18n="demoEditorB2">Стандартный спрайт Улитки и координатная сетка <code>xy-grid</code> доступны в новых проектах и меню костюма.</li>
+              <li data-i18n="demoEditorB3">Совместимо с файлами <code>.sb</code>, <code>.sb2</code> и <code>.sb3</code>.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Demo 2: Lottie wallpapers -->
+        <div class="showcase-panel hidden" id="demo-lottie" role="tabpanel">
+          <div class="showcase-visual">
+            <div class="demo-stage">
+              <div class="demo-lottie-box">
+                <div class="demo-blob b1" aria-hidden="true"></div>
+                <div class="demo-blob b2" aria-hidden="true"></div>
+                <div class="demo-blob b3" aria-hidden="true"></div>
+                <div class="demo-blocks-overlay">
+                  <div class="demo-block hat" data-i18n="demoHatBlock">когда нажат зелёный флажок</div>
+                  <div class="demo-block motion" data-i18n="demoMotionBlock">плыть 1 сек в x: 0 y: 0</div>
+                  <div class="demo-block looks">Lottie: 0.25x – 2.5x · Blur · Opacity</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="showcase-info">
+            <h3 data-i18n="demoLottieTitle">Живые обои в формате Lottie в редакторе тем</h3>
+            <p data-i18n="demoLottieDesc">Загружайте векторные анимации <code>.json</code> и архивы <code>.lottie</code> на фон рабочей области скриптов. Анимация воспроизводится плавно прямо в SVG.</p>
+            <ul class="showcase-list">
+              <li data-i18n="demoLottieB1">Живой предпросмотр прямо в окне Редактора тем.</li>
+              <li data-i18n="demoLottieB2">Регулировка скорости (<code>0.25x</code>–<code>2.5x</code>), прозрачности, размытия и режима подгонки.</li>
+              <li data-i18n="demoLottieB3">Собственные цветовые акценты, иконки и пользовательский CSS.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Demo 3: Cleaner Snail & 5-per-column -->
+        <div class="showcase-panel hidden" id="demo-cleanup" role="tabpanel">
+          <div class="showcase-visual">
+            <div class="demo-cleanup-box">
+              <div class="demo-cleanup-snail">
+                <img
+                  src="cleaner-snail.svg"
+                  alt="Улитка-уборщик проекта UliBlock с метлой"
+                  width="135"
+                  height="110"
+                  loading="lazy"
+                >
+                <span data-i18n="demoSnailLabel">Улитка-уборщик</span>
+              </div>
+              <div class="demo-columns" aria-label="Схема раскладки 5 скриптов в колонку">
+                <div class="demo-col">
+                  <span class="demo-col-label" data-i18n="demoCol1">Кол. 1 (5)</span>
+                  <div class="demo-pill" style="width: 65%"></div>
+                  <div class="demo-pill" style="width: 72%"></div>
+                  <div class="demo-pill" style="width: 75%"></div>
+                  <div class="demo-pill" style="width: 80%"></div>
+                  <div class="demo-pill" style="width: 84%"></div>
+                </div>
+                <div class="demo-col">
+                  <span class="demo-col-label" data-i18n="demoCol2">Кол. 2 (5)</span>
+                  <div class="demo-pill" style="width: 86%"></div>
+                  <div class="demo-pill" style="width: 90%"></div>
+                  <div class="demo-pill" style="width: 92%"></div>
+                  <div class="demo-pill" style="width: 94%"></div>
+                  <div class="demo-pill" style="width: 96%"></div>
+                </div>
+                <div class="demo-col">
+                  <span class="demo-col-label" data-i18n="demoColFinal">Финал (широкие)</span>
+                  <div class="demo-pill wide" style="width: 100%"></div>
+                  <div class="demo-pill wide" style="width: 100%"></div>
+                  <div class="demo-pill wide" style="width: 100%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="showcase-info">
+            <h3 data-i18n="demoCleanupTitle">Улитка-уборщик и раскладка скриптов по ширине</h3>
+            <p data-i18n="demoCleanupDesc">Глобальная очистка проекта в меню «Правка» наводит порядок сразу во всех спрайтах без лишних всплывающих вопросов.</p>
+            <ul class="showcase-list">
+              <li data-i18n="demoCleanupB1">Удаляет висящие блоки без шапки, пустые шапки и лишние локальные переменные.</li>
+              <li data-i18n="demoCleanupB2">Раскладывает по 5 скриптов в колонку, перенося самые широкие в последнюю колонку справа.</li>
+              <li data-i18n="demoCleanupB3">Все параметры скрыты под кнопку «⚙ Настройки» — запускается в один клик.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Demo 4: SB3 Explorer -->
+        <div class="showcase-panel hidden" id="demo-explorer" role="tabpanel">
+          <div class="showcase-visual">
+            <div class="demo-tree">
+              <div class="demo-tree-card">
+                <div><strong>📁 project.sb3</strong> <span class="demo-tree-badge">SB3 Explorer</span></div>
+                <div>├─ 📁 <strong>Улитка</strong></div>
+                <div>│&nbsp;&nbsp;├─ 📁 res/costumes/</div>
+                <div>│&nbsp;&nbsp;│&nbsp;&nbsp;└─ 🎨 <code>snail.svg</code> (124×108)</div>
+                <div>│&nbsp;&nbsp;├─ 📁 res/sounds/</div>
+                <div>│&nbsp;&nbsp;└─ 🧩 <code>sprite.sprite3</code></div>
+                <div>└─ 📄 <code>project.json</code> · <span data-i18n="demoTreeExport">экспорт выбранного</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="showcase-info">
+            <h3 data-i18n="demoExplorerTitle">SB3 Explorer и отправка скриптов спрайтам</h3>
+            <p data-i18n="demoExplorerDesc">Просматривайте внутреннюю структуру проекта, слушайте звуки, проверяйте костюмы и экспортируйте только нужные ресурсы.</p>
+            <ul class="showcase-list">
+              <li data-i18n="demoExplorerB1">Поддержка папок TurboWarp (<code>Папка//Имя</code>) со сворачиванием дерева.</li>
+              <li data-i18n="demoExplorerB2">Отправка скрипта (ПКМ → «Отправить») сразу в несколько выбранных спрайтов с переносом локальных переменных.</li>
+              <li data-i18n="demoExplorerB3">Выборочная выгрузка только костюмов, звуков, расширений или спрайтов.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Сравнение -->
+    <section id="compare">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="compareTitle">Сравнение с обычным Scratch и TurboWarp Desktop</h2>
+            <p class="section-sub" data-i18n="compareSub">UliBlock сохраняет совместимость с .sb3, добавляя инструменты, которых не хватает в стандартных клиентах.</p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="cmpColFeature">Возможность</th>
+                <th scope="col">Scratch Desktop</th>
+                <th scope="col">TurboWarp Desktop</th>
+                <th scope="col" class="uli-col">UliBlock</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-i18n="cmpR1">Компилятор JS, 60 FPS и тёмная тема</td>
+                <td class="no">—</td>
+                <td class="yes">✓</td>
+                <td class="uli-col yes">✓</td>
+              </tr>
+              <tr>
+                <td data-i18n="cmpR2">12 галерей расширений с офлайн-кэшем</td>
+                <td class="no">—</td>
+                <td class="no" data-i18n="cmpR2Tw">Только URL вручную</td>
+                <td class="uli-col yes" data-i18n="cmpR2Uli">✓ Каталог + кэш</td>
+              </tr>
+              <tr>
+                <td data-i18n="cmpR3">Редактор костюмов PenguinMod-Paint + 14 шрифтов</td>
+                <td class="no" data-i18n="cmpBasic">Базовый</td>
+                <td class="no" data-i18n="cmpStandard">Стандартный</td>
+                <td class="uli-col yes" data-i18n="cmpBuiltIn">✓ Встроен</td>
+              </tr>
+              <tr>
+                <td data-i18n="cmpR4">Встроенный упаковщик в HTML / EXE / ZIP</td>
+                <td class="no">—</td>
+                <td class="no" data-i18n="cmpBrowserOnly">Отдельно в браузере</td>
+                <td class="uli-col yes" data-i18n="cmpPackager">✓ Uli Packager внутри</td>
+              </tr>
+              <tr>
+                <td data-i18n="cmpR5">Проводник проекта SB3 Explorer и экспорт .sprite3</td>
+                <td class="no">—</td>
+                <td class="no">—</td>
+                <td class="uli-col yes" data-i18n="cmpFileMenu">✓ В меню «Файл»</td>
+              </tr>
+              <tr>
+                <td data-i18n="cmpR6">Редактор тем, кастомный CSS и живые Lottie-обои</td>
+                <td class="no">—</td>
+                <td class="no" data-i18n="cmpAccentsOnly">Только акценты</td>
+                <td class="uli-col yes" data-i18n="cmpFullEditor">✓ Полный редактор</td>
+              </tr>
+              <tr>
+                <td data-i18n="cmpR7">Очистка всех спрайтов и отправка скриптов группой</td>
+                <td class="no">—</td>
+                <td class="no">—</td>
+                <td class="uli-col yes" data-i18n="cmpCleaner">✓ Улитка-уборщик</td>
+              </tr>
+              <tr>
+                <td data-i18n="cmpR8">Отложенное обновление «Обновить после работы»</td>
+                <td class="no">—</td>
+                <td class="no">—</td>
+                <td class="uli-col yes" data-i18n="cmpDeferred">✓ Фоновая загрузка</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Скачать -->
+    <section id="download" class="alt">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="dlTitle">Скачать UliBlock v1.6.0</h2>
+            <p class="section-sub" data-i18n="dlSub">Выберите вашу операционную систему — подберём готовый установщик или портативную сборку.</p>
+          </div>
+          <a class="btn btn-secondary-inline" href="https://github.com/123asxcqasdc/uliblock/releases/tag/v1.6.0" target="_blank" rel="noreferrer" data-i18n="dlAllAssets">Все файлы релиза v1.6.0 ↗</a>
+        </div>
 
         <div class="download-card">
-          <div class="os-tabs" role="tablist">
-            <button type="button" class="os-tab" id="tab-windows" data-os="windows">
+          <div class="os-tabs" role="tablist" aria-label="Выбор операционной системы">
+            <button type="button" class="os-tab" id="tab-windows" role="tab" aria-selected="true" data-os="windows">
               🪟 Windows
             </button>
-            <button type="button" class="os-tab" id="tab-linux" data-os="linux">
+            <button type="button" class="os-tab" id="tab-linux" role="tab" aria-selected="false" data-os="linux">
               🐧 Linux
             </button>
           </div>
 
           <!-- Windows Panel -->
-          <div id="panel-windows" class="hidden">
+          <div id="panel-windows" role="tabpanel">
             <div class="download-result">
               <div class="download-result-header">
                 <div class="download-meta">
-                  <h3>MSI-установщик UliBlock для Windows (x64)</h3>
-                  <p>Windows 10 / 11 (64-bit) · установка для всех пользователей со стандартным прогресс-баром MSI · <code>UliBlock-Setup-1.6.0-x64.msi</code></p>
+                  <h3 data-i18n="winTitle">MSI-установщик UliBlock для Windows (x64)</h3>
+                  <p>Windows 10 / 11 (64-bit) · <code>UliBlock-Setup-1.6.0-x64.msi</code></p>
                 </div>
-                <a class="btn-download" id="dl-windows" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.6.0/UliBlock-Setup-1.6.0-x64.msi">
-                  ⬇ Скачать для Windows (.msi)
+                <a class="btn btn-download" id="dl-windows" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.6.0/UliBlock-Setup-1.6.0-x64.msi" data-i18n="winBtn">
+                  ⬇ Скачать .msi
                 </a>
               </div>
               <ol class="install-steps">
-                <li>Скачайте и запустите <code>UliBlock-Setup-1.6.0-x64.msi</code>.</li>
-                <li>Установщик автоматически поставит UliBlock для всех пользователей (в <code>Program Files</code>) со стандартным окном прогресса Windows Installer — без лишних вопросов и предупреждений, а затем сразу запустит редактор.</li>
-                <li>Ярлыки и ассоциации файлов <code>.sb3</code> / <code>.sb2</code> / <code>.sb</code> настроятся автоматически.</li>
+                <li data-i18n="winStep1">Запустите <code>UliBlock-Setup-1.6.0-x64.msi</code> — установка пройдёт со стандартным прогресс-баром Windows Installer.</li>
+                <li data-i18n="winStep2">Ярлыки и ассоциации файлов <code>.sb3</code>, <code>.sb2</code> и <code>.sb</code> настроятся автоматически.</li>
               </ol>
             </div>
           </div>
 
           <!-- Linux Panel -->
-          <div id="panel-linux" class="hidden">
+          <div id="panel-linux" class="hidden" role="tabpanel">
             <div class="selector-group">
-              <span class="selector-label">1. Выберите архитектуру процессора</span>
+              <span class="selector-label" data-i18n="linArchLabel">1. Архитектура процессора</span>
               <div class="pill-row">
                 <button type="button" class="pill-btn active" data-arch="x64">
                   x64 (AMD / Intel 64-bit)
-                  <small>Обычные ПК и ноутбуки</small>
+                  <small data-i18n="linArchX64">Обычные ПК и ноутбуки</small>
                 </button>
                 <button type="button" class="pill-btn" data-arch="arm64">
                   ARM64 (aarch64)
-                  <small>Raspberry Pi, ARM-устройства</small>
+                  <small data-i18n="linArchArm">Raspberry Pi, ARM-устройства</small>
                 </button>
               </div>
             </div>
 
             <div class="selector-group">
-              <span class="selector-label">2. Выберите ваш дистрибутив Linux</span>
+              <span class="selector-label" data-i18n="linDistroLabel">2. Дистрибутив Linux</span>
               <div class="pill-row">
                 <button type="button" class="pill-btn active" data-distro="debian">
                   Debian / Ubuntu
-                  <small>Ubuntu, Debian, Linux Mint, Pop!_OS, Zorin и производные (.deb)</small>
+                  <small>Ubuntu, Mint, Pop!_OS, Zorin (.deb)</small>
                 </button>
                 <button type="button" class="pill-btn" data-distro="fedora">
                   Fedora / RHEL / openSUSE
-                  <small>Fedora, Nobara, RHEL, Rocky, openSUSE (.rpm)</small>
+                  <small>Fedora, Nobara, RHEL, openSUSE (.rpm)</small>
                 </button>
                 <button type="button" class="pill-btn" data-distro="other">
-                  Другой дистрибутив Linux
-                  <small>Arch, Manjaro и т.д. (портативный AppImage)</small>
+                  Другой дистрибутив
+                  <small>Arch, Manjaro (портативный AppImage)</small>
                 </button>
               </div>
             </div>
 
-            <!-- Debian/Ubuntu & Fedora result: lightweight AppImage installer -->
             <div id="linux-result-debian" class="download-result">
               <div class="download-result-header">
                 <div class="download-meta">
                   <h3 id="deb-inst-title">Установщик UliBlock для Debian / Ubuntu (x64)</h3>
-                  <p id="deb-inst-desc">
-                    Лёгкий графический установщик (~1 МБ): сам определит систему, скачает и установит пакет (.deb / .rpm) без команд в терминале · <code id="deb-inst-file">UliBlock-Installer-linux-x64-1.6.0.AppImage</code>
+                  <p>
+                    <span data-i18n="linInstDesc">Графический установщик (~1 МБ): сам определит систему, скачает и поставит пакет ·</span>
+                    <code id="deb-inst-file">UliBlock-Installer-linux-x64-1.6.0.AppImage</code>
                   </p>
                 </div>
-                <a class="btn-download" id="dl-linux-installer" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.6.0/UliBlock-Installer-linux-x64-1.6.0.AppImage">
-                  ⬇ Скачать установщик (~1 МБ)
+                <a class="btn btn-download" id="dl-linux-installer" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.6.0/UliBlock-Installer-linux-x64-1.6.0.AppImage" data-i18n="linInstBtn">
+                  ⬇ Скачать установщик
                 </a>
               </div>
               <ol class="install-steps">
-                <li>Скачайте файл <code id="deb-inst-step-file">UliBlock-Installer-linux-x64-1.6.0.AppImage</code>.</li>
-                <li>Откройте <strong>Свойства → Права</strong> и включите <strong>«Разрешить выполнение файла как программы»</strong> (или выполните <code>chmod +x UliBlock-Installer-*.AppImage</code>).</li>
-                <li>Запустите файл двойным кликом и нажмите <strong>«Установить UliBlock»</strong> — установщик автоматически загрузит и установит UliBlock с иконкой в меню приложений и поддержкой <code>.sb3</code>!</li>
+                <li><span data-i18n="linInstStep1">Скачайте</span> <code id="deb-inst-step-file">UliBlock-Installer-linux-x64-1.6.0.AppImage</code> <span data-i18n="linInstStep1b">и разрешите запуск:</span> <code>chmod +x UliBlock-Installer-*.AppImage</code>.</li>
+                <li data-i18n="linInstStep2">Откройте файл двойным кликом и нажмите «Установить UliBlock» — программа появится в меню приложений с поддержкой <code>.sb3</code>.</li>
               </ol>
             </div>
 
-            <!-- Other Linux distros: full portable AppImage -->
             <div id="linux-result-other" class="download-result hidden">
               <div class="download-result-header">
                 <div class="download-meta">
                   <h3 id="other-appimage-title">Портативный UliBlock AppImage (x64)</h3>
-                  <p id="other-appimage-desc">
-                    Полная офлайн-сборка для любого дистрибутива Linux · <code id="other-appimage-file">UliBlock-linux-x86_64-1.6.0.AppImage</code>
+                  <p>
+                    <span data-i18n="linAppDesc">Полная офлайн-сборка без установки в систему ·</span>
+                    <code id="other-appimage-file">UliBlock-linux-x86_64-1.6.0.AppImage</code>
                   </p>
                 </div>
-                <a class="btn-download" id="dl-linux-appimage" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.6.0/UliBlock-linux-x86_64-1.6.0.AppImage">
+                <a class="btn btn-download" id="dl-linux-appimage" href="https://github.com/123asxcqasdc/uliblock/releases/download/v1.6.0/UliBlock-linux-x86_64-1.6.0.AppImage" data-i18n="linAppBtn">
                   ⬇ Скачать AppImage
                 </a>
               </div>
               <ol class="install-steps">
-                <li>Разрешите запуск файла как программы (<code>chmod +x UliBlock-linux-*.AppImage</code>).</li>
-                <li>Запустите AppImage двойным кликом или из терминала — установка в систему не требуется.</li>
+                <li data-i18n="linAppStep1">Выдайте права на запуск: <code>chmod +x UliBlock-linux-*.AppImage</code> и запустите файл.</li>
               </ol>
             </div>
           </div>
-
-          <p style="margin: 18px 0 0; font-size: 13.5px; color: var(--text-muted);">
-            Все релизы и исходный код доступны на <a href="https://github.com/123asxcqasdc/uliblock/releases/tag/v1.6.0" target="_blank" rel="noreferrer">GitHub Releases</a>.
-          </p>
         </div>
 
         <div class="security-box">
-          <strong>⚠️ Важно о безопасности:</strong> в UliBlock пользовательские расширения загружаются без диалога подтверждения и работают в режиме <code>unsandboxed</code>. Открывайте проекты <code>.sb3</code> и подключайте расширения только от авторов и галерей, которым вы доверяете.
+          <strong data-i18n="secTitle">Важно о безопасности:</strong>
+          <span data-i18n="secText">в UliBlock пользовательские расширения запускаются в режиме <code>unsandboxed</code> без диалога подтверждения. Открывайте <code>.sb3</code> и подключайте расширения только из доверенных источников.</span>
         </div>
       </div>
     </section>
 
-    <section id="features" class="alt">
-      <div class="container">
-        <h2>Почему UliBlock?</h2>
-        <p class="section-sub">Всё лучшее от TurboWarp Desktop плюс инструменты, нужные для комфортной работы офлайн.</p>
-
-        <div class="features-grid">
-          <div class="feature-card">
-            <span class="feature-icon">🧩</span>
-            <h3>Галерея расширений с офлайн-кэшем</h3>
-            <p>Все встроенные расширения Scratch и TurboWarp уже внутри, плюс каталог сообщества (12 галерей, 14 категорий) с автоматическим кэшированием на диск и обязательным указанием автора и источника.</p>
-          </div>
-
-          <div class="feature-card">
-            <span class="feature-icon">🎨</span>
-            <h3>PenguinMod-Paint + 14 шрифтов</h3>
-            <p>Расширенный редактор костюмов с дополнительными инструментами рисования и 7 новыми шрифтами (Archivo, Bits and Bytes, Comic, Playful, Technological и др.).</p>
-          </div>
-
-          <div class="feature-card">
-            <span class="feature-icon">📦</span>
-            <h3>Встроенный Uli Packager</h3>
-            <p>Экспортируйте проекты в HTML, ZIP или исполняемые программы прямо из редактора — без браузера и интернета.</p>
-          </div>
-
-          <div class="feature-card">
-            <span class="feature-icon">🗂️</span>
-            <h3>SB3 Explorer (проводник проекта)</h3>
-            <p>Открывайте внутреннюю структуру проекта в меню «Файл» (<code>/snail/res/costumes/happy.svg</code>), просматривайте ассеты и экспортируйте только костюмы, звуки, расширения или отдельные спрайты <code>.sprite3</code>.</p>
-          </div>
-
-          <div class="feature-card">
-            <span class="feature-icon">⚡</span>
-            <h3>Минимум лишнего веса</h3>
-            <p>Из дистрибутива удалены тяжёлые стандартные библиотеки спрайтов, фонов и звуков — создавайте, рисуйте и загружайте свои ассеты.</p>
-          </div>
-
-          <div class="feature-card">
-            <span class="feature-icon">🛠️</span>
-            <h3>Полезные аддоны из коробки</h3>
-            <p>Отладчик, слайдер громкости, координаты мыши, менеджер переменных, подтверждение удаления спрайтов, скрытие новых переменных и защита от случайного перетаскивания включены по умолчанию (отключаются в настройках).</p>
-          </div>
-
-          <div class="feature-card">
-            <span class="feature-icon">🟢</span>
-            <h3>Фирменный стиль Ули</h3>
-            <p>Зелёная тема интерфейса в цветах иконки, кастомный экран загрузки проектов и свой талисман — улитка в каждом новом проекте.</p>
-          </div>
-        </div>
-
-        <div class="mascot-row">
-          <img src="snail.svg" alt="Улитка UliBlock">
-          <div>
-            <strong>Новый проект — с улиткой UliBlock!</strong>
-            <div style="font-size: 14px; color: var(--text-muted); margin-top: 3px;">
-              Начиная с версии 1.1.1 каждый новый проект открывается со спрайтом улитки по умолчанию.
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
+    <!-- История изменений -->
     <section id="changelog">
       <div class="container">
-        <h2>История изменений</h2>
-        <p class="section-sub">Полный технический журнал отличий от upstream доступен в <a href="https://github.com/123asxcqasdc/uliblock/blob/main/CHANGES.md" target="_blank" rel="noreferrer">CHANGES.md</a>.</p>
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="changelogTitle">История обновлений</h2>
+            <p class="section-sub" data-i18n="changelogSub">Свежие версии и ссылка на полный журнал изменений в репозитории.</p>
+          </div>
+          <a class="btn btn-secondary-inline" href="https://github.com/123asxcqasdc/uliblock/blob/main/CHANGES.md" target="_blank" rel="noreferrer">CHANGES.md ↗</a>
+        </div>
 
         <div class="changelog-item">
           <h3><span class="ver-pill">v1.6.0</span> Живые Lottie-обои, «Обновить после работы», Улитка-уборщик и костюм Улитки</h3>
           <ul>
-            <li><strong>Живые обои в формате Lottie:</strong> в Редактор тем добавлена поддержка анимированных обоев <code>.json</code> и <code>.lottie</code> с настройкой скорости, прозрачности и размытия.</li>
-            <li><strong>Отложенное обновление:</strong> в окне обновления появилась кнопка «Обновить после работы» — скачивает установщик в фоне и запускает его только после закрытия всех окон UliBlock.</li>
-            <li><strong>Улитка-уборщик в очистке проекта:</strong> галочки настроек перенесены в кнопку «⚙ Настройки», а на главном экране очистки отображается улитка-уборщик.</li>
+            <li><strong>Живые обои Lottie:</strong> поддержка анимированных <code>.json</code> и <code>.lottie</code> обоев в Редакторе тем с настройкой скорости, прозрачности и размытия.</li>
+            <li><strong>«Обновить после работы»:</strong> фоновое скачивание установщика и автоматический запуск после закрытия всех окон UliBlock.</li>
+            <li><strong>Улитка-уборщик:</strong> галочки параметров очистки вынесены в кнопку «⚙ Настройки», а на главном экране отображается улитка-уборщик.</li>
             <li><strong>Пункт «Улитка» в меню костюма:</strong> добавляет стандартный костюм улитки UliBlock в один клик.</li>
           </ul>
         </div>
 
         <div class="changelog-item">
-          <h3><span class="ver-pill">v1.5.1</span> Раскладка скриптов по горизонтальной ширине (по 5 в колонке, широкие — в конец)</h3>
+          <h3><span class="ver-pill">v1.5.1</span> Раскладка скриптов по горизонтальной ширине (5 в колонке, широкие в конце)</h3>
           <ul>
-            <li>При очистке кода и «Очистить блоки +» скрипты сортируются по <strong>горизонтальной длине (ширине)</strong> и выстраиваются по <strong>5 скриптов в каждой колонке</strong>.</li>
-            <li>Достаточно широкие скрипты автоматически собираются в <strong>последнюю правую колонку</strong> (где их может быть больше 5), чтобы широкие блоки не растягивали промежуточные колонки посередине.</li>
+            <li>Скрипты при очистке сортируются по ширине и выстраиваются по 5 в колонку, а широкие переносятся в последнюю колонку справа.</li>
           </ul>
         </div>
 
         <div class="changelog-item">
-          <h3><span class="ver-pill">v1.5.0</span> Исправление ошибки при очистке больших проектов</h3>
+          <h3><span class="ver-pill">v1.5.0</span> Стабильность очистки больших проектов</h3>
           <ul>
-            <li>Исправлена ошибка <code>t.isDisposed is not a function</code> при очистке кода во всех спрайтах (корректная проверка удалённых блоков для <code>scratch-blocks</code> и безопасная обработка комментариев к блокам).</li>
+            <li>Исправлена ошибка <code>t.isDisposed is not a function</code> при очистке кода во всех спрайтах и комментариях.</li>
           </ul>
         </div>
 
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.4.1</span> Новые источники в Галерее расширений</h3>
-          <ul>
-            <li>В список источников «Галереи расширений UliBlock» добавлены новые галереи: <strong>⚡ ElectraMod</strong> и <strong>🐈 Gaia’s Gallery</strong>, а также поддержка любых будущих источников из каталога.</li>
-          </ul>
+        <details class="older-releases">
+          <summary data-i18n="olderReleases">Предыдущие релизы (v1.4.1 — v1.0.0)</summary>
+          <div style="margin-top: 14px;">
+            <div class="changelog-item">
+              <h3><span class="ver-pill">v1.4.1</span> Новые источники в Галерее расширений</h3>
+              <ul>
+                <li>Добавлены галереи <strong>ElectraMod</strong> и <strong>Gaia’s Gallery</strong>, а также поддержка новых источников из каталога.</li>
+              </ul>
+            </div>
+            <div class="changelog-item">
+              <h3><span class="ver-pill">v1.4.0</span> Отправка скриптов нескольким спрайтам и тихая очистка</h3>
+              <ul>
+                <li>ПКМ → «Отправить» позволяет копировать скрипт сразу в несколько спрайтов и сцену с переносом локальных переменных.</li>
+                <li>Добавлена глобальная очистка кода во всех спрайтах без всплывающих подтверждений.</li>
+              </ul>
+            </div>
+            <div class="changelog-item">
+              <h3><span class="ver-pill">v1.3.0 – v1.3.2</span> MSI для Windows, .rpm для Fedora и SB3 Explorer</h3>
+              <ul>
+                <li>Добавлены Windows MSI-установщик, тихое автообновление без окна консоли, пакеты <code>.rpm</code> и проводник проекта <strong>SB3 Explorer</strong> со сворачиванием папок TurboWarp.</li>
+              </ul>
+            </div>
+            <div class="changelog-item">
+              <h3><span class="ver-pill">v1.0.0 – v1.2.2</span> Базовый релиз, PenguinMod-Paint, Редактор тем и Uli Packager</h3>
+              <ul>
+                <li>Форк TurboWarp Desktop с зелёной темой, офлайн-кэшем галереи расширений, PenguinMod-Paint, 14 шрифтами, автообновлением и встроенным упаковщиком.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="alt">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="faqTitle">Частые вопросы (FAQ)</h2>
+            <p class="section-sub" data-i18n="faqSub">Короткие ответы об установке, совместимости проектов и работе обновлений.</p>
+          </div>
         </div>
 
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.4.0</span> Отправка скриптов нескольким спрайтам и тихая очистка проекта</h3>
-          <ul>
-            <li><strong>Отправка скрипта в несколько спрайтов (ПКМ → «Отправить»):</strong> выберите сразу несколько спрайтов и/или сцену, чтобы скопировать скрипт без перетаскивания по одному — с поиском, поддержкой папок TurboWarp, переносом локальных переменных и размещением без наложения.</li>
-            <li><strong>Глобальная очистка проекта («Правка» → «Очистка кода (все спрайты)...»):</strong> удаляет скрипты без шапки (которые не могут запускаться), пустые шапки без кода, неиспользуемые локальные переменные и списки, и запускает «Очистить блоки +» во всех спрайтах.</li>
-            <li><strong>Тихое «Очистить блоки +» и длинные скрипты направо:</strong> полностью отключены всплывающие вопросы «удалить неиспользуемый сенсор» и «удалить ненужную локальную переменную», а самые длинные скрипты отправляются направо.</li>
-          </ul>
-        </div>
+        <details class="faq-item">
+          <summary data-i18n="faq1Q">Совместимы ли проекты UliBlock со стандартным Scratch и TurboWarp?</summary>
+          <p data-i18n="faq1A">Да. Проекты сохраняются в стандартном формате .sb3. Если вы не использовали сторонние расширения из галереи сообщества, файл без проблем откроется и в обычном Scratch, и в TurboWarp.</p>
+        </details>
 
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.3.2</span> Поддержка .rpm для Fedora, тихое автообновление на Windows без консоли и отказ от .exe</h3>
-          <ul>
-            <li><strong>RPM-пакет для Fedora:</strong> в релизах теперь собираются пакеты <code>.rpm</code> (x64 и ARM64), а лёгкий установщик <code>UliBlock-Installer-linux-*.AppImage</code> автоматически определяет Fedora/RHEL/openSUSE и ставит <code>.rpm</code> через <code>dnf</code>/<code>zypper</code>/<code>rpm</code>.</li>
-            <li><strong>Автообновление на Windows без командной строки:</strong> путь к скачанному <code>.msi</code> записывается в файл <code>update-path.txt</code>, а запуск идёт через <code>wscript.exe</code> (VBScript), полностью без окна <code>cmd.exe</code>.</li>
-            <li><strong>Только MSI для Windows:</strong> сборка устаревшего NSIS-установщика <code>.exe</code> отключена.</li>
-          </ul>
-        </div>
+        <details class="faq-item">
+          <summary data-i18n="faq2Q">Зачем нужен офлайн-кэш расширений сообщества?</summary>
+          <p data-i18n="faq2A">Когда вы открываете расширение из встроенной галереи, UliBlock сохраняет его локально на диск. После этого проект с этим расширением продолжит запускаться даже полностью без доступа к интернету.</p>
+        </details>
 
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.3.1</span> Сворачивание папок и поддержка папок TurboWarp в SB3 Explorer</h3>
-          <ul>
-            <li>В левом дереве <strong>SB3 Explorer</strong> добавлено сворачивание/разворачивание папок (кнопки <code>▸</code>/<code>▾</code>, двойной клик и кнопки «Развернуть все» / «Свернуть все»).</li>
-            <li>Добавлена поддержка папок TurboWarp для спрайтов и ресурсов (<code>Папка//Имя</code>): вложенная структура отображается прямо в дереве и сохраняется при экспорте.</li>
-          </ul>
-        </div>
+        <details class="faq-item">
+          <summary data-i18n="faq3Q">Безопасно ли, что расширения работают без песочницы (unsandboxed)?</summary>
+          <p data-i18n="faq3A">Режим unsandboxed даёт расширениям больше возможностей (например, для сложных графических, системных или сетевых блоков), но код расширения выполняется с полными правами окна редактора. Подключайте расширения и открывайте чужие .sb3 только от авторов, которым доверяете.</p>
+        </details>
 
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.3.0</span> Windows MSI-установщик и SB3 Explorer в меню «Файл»</h3>
-          <ul>
-            <li><strong>MSI-установщик для Windows:</strong> установка в один клик для всех пользователей со стандартным диалогом прогресса Windows Installer, без лишних предупреждений и вопросов; автообновление на Windows переведено на <code>.msi</code> (<code>/passive</code>).</li>
-            <li><strong>SB3 Explorer:</strong> новый проводник проекта во вкладке меню «Файл» — дерево файлов вида <code>/snail/res/costumes/happy.svg</code>, предпросмотр изображений, звуков и JSON/JS и выборочный экспорт (выбранные файлы/папки, только костюмы и фоны, только звуки, спрайты по отдельности в <code>.sprite3</code>, только расширения или весь проект).</li>
-          </ul>
-        </div>
+        <details class="faq-item">
+          <summary data-i18n="faq4Q">Как работает кнопка «Обновить после работы»?</summary>
+          <p data-i18n="faq4A">При появлении новой версии нажмите «Обновить после работы»: установщик начнёт скачиваться в фоне, пока вы спокойно доделываете проект. Как только вы закроете все окна UliBlock, установка запустится автоматически.</p>
+        </details>
 
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.2.2</span> Зелёная тема для редактора костюмов PenguinMod-Paint</h3>
-          <ul>
-            <li>Редактор костюмов <strong>PenguinMod-Paint</strong> перекрашен из фирменного голубого цвета PenguinMod в зелёную тему UliBlock (<code>#22a630</code> / <code>#177421</code>), включая 34 иконки инструментов и все элементы интерфейса.</li>
-            <li>Стили редактора костюмов подключены к CSS-переменным темы и теперь меняются вместе с выбором акцентного цвета в настройках и «Редакторе тем».</li>
-          </ul>
-        </div>
+        <details class="faq-item">
+          <summary data-i18n="faq5Q">Собирает ли UliBlock статистику, телеметрию или cookies?</summary>
+          <p data-i18n="faq5A">Нет. Ни на этом сайте, ни в самой программе нет аналитики, рекламных трекеров, cookies и сбора пользовательских данных. Обращения в сеть происходят только при проверке обновлений на GitHub или загрузке расширений по вашему выбору.</p>
+        </details>
 
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.2.1</span> Обновление упаковщика и исправление автообновления</h3>
-          <ul>
-            <li>Обновлён встроенный упаковщик <strong>Uli Packager</strong> (<code>standalone.html</code>).</li>
-            <li>В Linux-установщике добавлена поддержка флага <code>-autoupdate</code> для автоматического обновления без лишних подтверждений.</li>
-          </ul>
-        </div>
-
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.2.0</span> Автообновление, редактор тем и координатная сетка</h3>
-          <ul>
-            <li><strong>Автообновление:</strong> при каждом запуске проверяется <code>releases/latest</code> на GitHub; при согласии UliBlock сам скачивает и запускает установщик с флагом <code>-autoupdate</code> и закрывает свои процессы.</li>
-            <li><strong>Редактор тем:</strong> рядом с выбором акцента появилась кнопка «Редактор тем» — свой акцентный цвет, обои рабочей области (как в Telegram), кастомные иконки управления и подключение своего CSS поверх всех стилей.</li>
-            <li><strong>Координатная сетка:</strong> в новом проекте вторым фоном по умолчанию добавлен <code>xy-grid</code>.</li>
-            <li>Исправлен цвет текста на зелёной кнопке Linux-установщика в KDE/Breeze.</li>
-          </ul>
-        </div>
-
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.1.1</span> Обновление упаковщика, спрайт улитки и сайт</h3>
-          <ul>
-            <li>Обновлён встроенный упаковщик <strong>Uli Packager</strong> (актуальный <code>standalone.html</code>).</li>
-            <li>Дефолтный костюм спрайта в новом проекте заменён на фирменную улитку UliBlock.</li>
-            <li>Запущен официальный сайт UliBlock на GitHub Pages с подбором установщика под Windows и Linux.</li>
-          </ul>
-        </div>
-
-        <div class="changelog-item">
-          <h3><span class="ver-pill">v1.0.0</span> Первый релиз UliBlock</h3>
-          <ul>
-            <li>Форк TurboWarp Desktop с брендингом <strong>UliBlock</strong> (<code>ru.c6t.uli.uliblock</code>), зелёной акцентной темой <code>#22a630</code> и кастомным экраном загрузки.</li>
-            <li>Встроенная галерея расширений сообщества с офлайн-кэшем и обязательной атрибуцией авторов и источников.</li>
-            <li>Интеграция <strong>PenguinMod-Paint</strong>, 7 дополнительных шрифтов, 7 включённых по умолчанию аддонов и удаление встроенных библиотек ассетов.</li>
-            <li>Добавлен единый лёгкий AppImage-установщик <code>.deb</code> (~1 МБ) для Debian/Ubuntu.</li>
-          </ul>
+        <div class="cta-strip">
+          <div>
+            <strong data-i18n="bottomCtaTitle">Готовы попробовать UliBlock v1.6.0?</strong>
+            <div style="font-size: 14px; color: var(--text-muted);" data-i18n="bottomCtaSub">Скачайте сборку для Windows или Linux или посмотрите исходный код на GitHub.</div>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a class="btn btn-download" href="#download" data-i18n="ctaDownload">⬇ Скачать v1.6.0</a>
+            <a class="btn btn-secondary-inline" href="https://github.com/123asxcqasdc/uliblock/issues" target="_blank" rel="noreferrer" data-i18n="ctaIssues">Issues на GitHub</a>
+          </div>
         </div>
       </div>
     </section>
@@ -847,13 +1514,21 @@
   <footer>
     <div class="container footer-grid">
       <div>
-        <strong>UliBlock</strong> — свободное ПО под лицензией <a href="https://github.com/123asxcqasdc/uliblock/blob/main/LICENSE" target="_blank" rel="noreferrer">GNU GPL v3.0</a>.<br>
-        Основано на <a href="https://github.com/TurboWarp/desktop" target="_blank" rel="noreferrer">TurboWarp Desktop</a>, <a href="https://scratch.mit.edu/" target="_blank" rel="noreferrer">Scratch</a> и <a href="https://github.com/PenguinMod/PenguinMod-Paint" target="_blank" rel="noreferrer">PenguinMod-Paint</a>. Не аффилировано с Scratch, TurboWarp или PenguinMod.
+        <strong>UliBlock</strong> — <span data-i18n="footerLicense">свободное ПО с открытым исходным кодом под лицензией</span>
+        <a href="https://github.com/123asxcqasdc/uliblock/blob/main/LICENSE" target="_blank" rel="noreferrer">GNU GPL v3.0</a>.<br>
+        <span data-i18n="footerAttrib">Основано на</span>
+        <a href="https://github.com/TurboWarp/desktop" target="_blank" rel="noreferrer">TurboWarp Desktop</a>,
+        <a href="https://scratch.mit.edu/" target="_blank" rel="noreferrer">Scratch</a>
+        <span data-i18n="footerAnd">и</span>
+        <a href="https://github.com/PenguinMod/PenguinMod-Paint" target="_blank" rel="noreferrer">PenguinMod-Paint</a>.
+        <span data-i18n="footerDisclaimer">Не аффилировано с Scratch, TurboWarp или PenguinMod.</span>
       </div>
-      <div>
-        <a href="https://github.com/123asxcqasdc/uliblock" target="_blank" rel="noreferrer">Исходный код</a> ·
-        <a href="https://github.com/123asxcqasdc/uliblock/issues" target="_blank" rel="noreferrer">Сообщить об ошибке</a> ·
-        <a href="https://123asxcqasdc.github.io/turbowarp-extensions/" target="_blank" rel="noreferrer">Галерея расширений</a>
+      <div class="footer-links">
+        <a href="https://github.com/123asxcqasdc/uliblock" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://github.com/123asxcqasdc/uliblock/releases" target="_blank" rel="noreferrer" data-i18n="navReleases">Релизы</a>
+        <a href="https://github.com/123asxcqasdc/uliblock/issues" target="_blank" rel="noreferrer">Issues</a>
+        <a href="https://123asxcqasdc.github.io/turbowarp-extensions/" target="_blank" rel="noreferrer" data-i18n="footerGallery">Галерея расширений</a>
+        <a href="#" data-i18n="footerTop">Наверх ↑</a>
       </div>
     </div>
   </footer>
@@ -863,15 +1538,208 @@
       const VERSION = '1.6.0';
       const BASE = 'https://github.com/123asxcqasdc/uliblock/releases/download/v' + VERSION + '/';
 
+      let currentLang = 'ru';
       let selectedOs = /Linux/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent) ? 'linux' : 'windows';
       let selectedArch = /aarch64|arm64/i.test(navigator.userAgent) ? 'arm64' : 'x64';
       let selectedDistro = 'debian';
 
+      const EN = {
+        skip: 'Skip to content',
+        navFeatures: 'Benefits',
+        navShowcase: 'Showcase',
+        navCompare: 'Compare',
+        navDownload: 'Download',
+        navFaq: 'FAQ',
+        navReleases: 'Releases',
+        heroBadge: 'v1.6.0 · Windows & Linux · GNU GPL-3.0',
+        heroTitle: 'Fast offline Scratch editor without the bloat',
+        heroSub: 'Open-source TurboWarp Desktop fork: 12 cached community extension galleries, PenguinMod-Paint costume editor, built-in EXE/HTML packager, SB3 Explorer, and Lottie live wallpapers.',
+        ctaDownload: '⬇ Download v1.6.0',
+        ctaReleases: 'Releases',
+        fact1: '✓ 1-click install (MSI / .deb / .rpm / AppImage)',
+        fact2: '✓ Zero telemetry, cookies, or accounts',
+        fact3: '✓ Compatible with .sb3 projects',
+        featuresTitle: 'Why use UliBlock',
+        featuresSub: 'Everything needed for offline Scratch game & animation development — without heavy bundled asset bloat.',
+        feat1Title: '12 cached extension galleries',
+        feat1Desc: 'Built-in community extension catalog (12 sources, 14 categories) caches extensions locally for offline use with clear author attribution.',
+        feat2Title: 'PenguinMod-Paint + 14 fonts',
+        feat2Desc: 'Enhanced vector & bitmap costume editor themed in green with extra drawing tools and 7 additional fonts.',
+        feat3Title: 'Built-in Uli Packager',
+        feat3Desc: 'Export projects as standalone HTML, ZIP, or desktop executables directly inside the editor without a browser.',
+        feat4Title: 'SB3 Explorer & Cleaner Snail',
+        feat4Desc: 'Inspect internal project trees, export individual .sprite3 sprites, send scripts to multiple sprites, and clean up all targets.',
+        feat5Title: 'Theme Editor & Lottie wallpapers',
+        feat5Desc: 'Customize accent colors, inject custom CSS, swap control icons, and play animated .json / .lottie workspace wallpapers.',
+        feat6Title: '“Update after work” & light footprint',
+        feat6Desc: 'Heavy default media libraries are stripped out, and deferred updates download in the background and install once all windows close.',
+        showcaseTitle: 'Key features in action',
+        showcaseSub: 'Switch tabs to preview UliBlock’s workspace, live Lottie wallpapers, script cleanup, and SB3 Explorer.',
+        ctaGoDownload: 'Go to download ↓',
+        demoTabEditor: 'Workspace',
+        demoTabLottie: 'Lottie wallpapers',
+        demoTabCleanup: 'Cleaner Snail 5×N',
+        demoTabExplorer: 'SB3 Explorer',
+        demoEditorTitle: 'Clean desktop workspace without clutter',
+        demoEditorDesc: 'Signature green interface, built-in developer tools (Ctrl+F block search, mouse coordinates, debugger), and responsive stage/sprite management.',
+        demoEditorB1: 'Seven productivity addons enabled out of the box and customizable anytime.',
+        demoEditorB2: 'Default UliBlock Snail sprite and xy-grid backdrop available in new projects and the costume menu.',
+        demoEditorB3: 'Opens standard .sb, .sb2, and .sb3 files.',
+        demoLottieTitle: 'Animated Lottie wallpapers in Theme Editor',
+        demoLottieDesc: 'Load vector .json and .lottie archives as live workspace backgrounds rendered smoothly via SVG.',
+        demoLottieB1: 'Live animated preview inside the Theme Editor modal.',
+        demoLottieB2: 'Controls for speed (0.25x–2.5x), opacity, blur, and sizing mode.',
+        demoLottieB3: 'Custom accent palettes, control icons, and user CSS.',
+        demoHatBlock: 'when green flag clicked',
+        demoMotionBlock: 'glide 1 secs to x: 0 y: 0',
+        demoSnailLabel: 'Cleaner Snail',
+        demoCol1: 'Col. 1 (5)',
+        demoCol2: 'Col. 2 (5)',
+        demoColFinal: 'Final (wide)',
+        demoTreeExport: 'selective export',
+        demoCleanupTitle: 'Cleaner Snail & horizontal-width 5×N layout',
+        demoCleanupDesc: 'Global project cleanup under Edit tidies every sprite without interrupting confirmation prompts.',
+        demoCleanupB1: 'Removes hatless blocks, empty hats, and unused local variables/lists.',
+        demoCleanupB2: 'Arranges 5 scripts per column sorted by width, putting wide scripts in the final column.',
+        demoCleanupB3: 'Checkboxes live under “Settings” for clean one-click execution.',
+        demoExplorerTitle: 'SB3 Explorer & multi-sprite script sending',
+        demoExplorerDesc: 'Browse project internals, preview costumes and audio, and selectively export assets.',
+        demoExplorerB1: 'Supports TurboWarp sprite/asset folders (Folder//Name) with collapsible trees.',
+        demoExplorerB2: 'Right-click any script → Send to copy it to multiple sprites at once, including local variables.',
+        demoExplorerB3: 'Export only costumes, sounds, extensions, or individual .sprite3 sprites.',
+        compareTitle: 'Compared with Scratch & TurboWarp Desktop',
+        compareSub: 'Full .sb3 compatibility plus power tools built into one desktop package.',
+        cmpColFeature: 'Feature',
+        cmpR1: 'JS compiler, 60 FPS & dark mode',
+        cmpR2: '12 extension galleries with offline cache',
+        cmpR2Tw: 'Manual URL only',
+        cmpR2Uli: '✓ Catalog + cache',
+        cmpR3: 'PenguinMod-Paint + 14 fonts',
+        cmpBasic: 'Basic',
+        cmpStandard: 'Standard',
+        cmpBuiltIn: '✓ Built-in',
+        cmpR4: 'Built-in HTML / EXE / ZIP packager',
+        cmpBrowserOnly: 'Browser only',
+        cmpPackager: '✓ Uli Packager inside',
+        cmpR5: 'SB3 Explorer & selective .sprite3 export',
+        cmpFileMenu: '✓ Under File menu',
+        cmpR6: 'Theme Editor, custom CSS & Lottie wallpapers',
+        cmpAccentsOnly: 'Accents only',
+        cmpFullEditor: '✓ Full editor',
+        cmpR7: 'Whole-project cleanup & multi-sprite script send',
+        cmpCleaner: '✓ Cleaner Snail',
+        cmpR8: 'Deferred “Update after work” installer',
+        cmpDeferred: '✓ Background download',
+        dlTitle: 'Download UliBlock v1.6.0',
+        dlSub: 'Pick your OS to get the right installer or portable build.',
+        dlAllAssets: 'All v1.6.0 release assets ↗',
+        winTitle: 'UliBlock Windows Installer (.msi, x64)',
+        winBtn: '⬇ Download .msi',
+        winStep1: 'Run UliBlock-Setup-1.6.0-x64.msi for a standard Windows Installer setup.',
+        winStep2: 'Shortcuts and .sb3 / .sb2 / .sb file associations are configured automatically.',
+        linArchLabel: '1. CPU architecture',
+        linArchX64: 'Standard PCs and laptops',
+        linArchArm: 'Raspberry Pi & ARM devices',
+        linDistroLabel: '2. Linux distribution',
+        linInstDesc: 'Lightweight (~1 MB) GUI installer that downloads & installs the native package ·',
+        linInstBtn: '⬇ Download installer',
+        linInstStep1: 'Download',
+        linInstStep1b: 'and mark executable:',
+        linInstStep2: 'Double-click and click “Install UliBlock” for full desktop menu & .sb3 integration.',
+        linAppDesc: 'Full offline portable build requiring no system install ·',
+        linAppBtn: '⬇ Download AppImage',
+        linAppStep1: 'Make executable with chmod +x UliBlock-linux-*.AppImage and run.',
+        secTitle: 'Security note:',
+        secText: 'custom extensions in UliBlock run unsandboxed without confirmation dialogs. Only open .sb3 files and load extensions from trusted authors.',
+        changelogTitle: 'Changelog',
+        changelogSub: 'Latest releases and link to the full technical changelog.',
+        olderReleases: 'Earlier releases (v1.4.1 — v1.0.0)',
+        faqTitle: 'Frequently Asked Questions',
+        faqSub: 'Short answers on compatibility, extension safety, and updates.',
+        faq1Q: 'Are UliBlock projects compatible with Scratch and TurboWarp?',
+        faq1A: 'Yes. Projects use the standard .sb3 format. Unless you use third-party community extensions, files open seamlessly in Scratch and TurboWarp.',
+        faq2Q: 'How does the offline extension cache work?',
+        faq2A: 'When you load an extension from the built-in gallery, UliBlock caches it locally on disk so projects keep working offline.',
+        faq3Q: 'Is running unsandboxed extensions safe?',
+        faq3A: 'Unsandboxed mode unlocks advanced capabilities, so extensions run with full editor permissions. Only trust projects and extensions from known authors.',
+        faq4Q: 'How does “Update after work” work?',
+        faq4A: 'Clicking “Update after work” downloads the installer immediately in the background and launches it only after you close all UliBlock windows.',
+        faq5Q: 'Does this site or app use analytics, telemetry, or cookies?',
+        faq5A: 'No. Neither this website nor UliBlock includes analytics, trackers, or cookies. Network requests only occur when checking GitHub releases or fetching user-selected extensions.',
+        bottomCtaTitle: 'Ready to try UliBlock v1.6.0?',
+        bottomCtaSub: 'Download for Windows or Linux, or inspect the source on GitHub.',
+        ctaIssues: 'GitHub Issues',
+        footerLicense: 'free open-source software licensed under',
+        footerAttrib: 'Based on',
+        footerAnd: 'and',
+        footerDisclaimer: 'Not affiliated with Scratch, TurboWarp, or PenguinMod.',
+        footerGallery: 'Extension Gallery',
+        footerTop: 'Back to top ↑'
+      };
+
+      const RU = {};
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        RU[el.getAttribute('data-i18n')] = el.innerHTML;
+      });
+
+      function applyLanguage(lang) {
+        currentLang = lang;
+        document.documentElement.lang = lang;
+        document.getElementById('lang-ru').classList.toggle('active', lang === 'ru');
+        document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+        document.getElementById('lang-ru').setAttribute('aria-pressed', String(lang === 'ru'));
+        document.getElementById('lang-en').setAttribute('aria-pressed', String(lang === 'en'));
+
+        const dict = lang === 'en' ? EN : RU;
+        document.querySelectorAll('[data-i18n]').forEach(function (el) {
+          const key = el.getAttribute('data-i18n');
+          if (!dict[key]) return;
+          if (lang === 'en') {
+            el.textContent = dict[key];
+          } else {
+            el.innerHTML = dict[key];
+          }
+        });
+        updateDownloadView();
+      }
+
+      document.getElementById('lang-ru').addEventListener('click', function () { applyLanguage('ru'); });
+      document.getElementById('lang-en').addEventListener('click', function () { applyLanguage('en'); });
+
+      // Showcase tabs with keyboard arrow navigation
+      const demoTabs = Array.from(document.querySelectorAll('.showcase-tab'));
+      function activateDemo(demoKey) {
+        demoTabs.forEach(function (tab) {
+          const active = tab.getAttribute('data-demo') === demoKey;
+          tab.classList.toggle('active', active);
+          tab.setAttribute('aria-selected', String(active));
+          const panel = document.getElementById('demo-' + tab.getAttribute('data-demo'));
+          if (panel) {
+            panel.classList.toggle('hidden', !active);
+          }
+        });
+      }
+      demoTabs.forEach(function (tab, idx) {
+        tab.addEventListener('click', function () {
+          activateDemo(tab.getAttribute('data-demo'));
+        });
+        tab.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            const nextIdx = e.key === 'ArrowRight' ?
+              (idx + 1) % demoTabs.length :
+              (idx - 1 + demoTabs.length) % demoTabs.length;
+            demoTabs[nextIdx].focus();
+            activateDemo(demoTabs[nextIdx].getAttribute('data-demo'));
+          }
+        });
+      });
+
+      // Download OS / Arch / Distro switcher
       const tabWin = document.getElementById('tab-windows');
       const tabLin = document.getElementById('tab-linux');
       const panelWin = document.getElementById('panel-windows');
       const panelLin = document.getElementById('panel-linux');
-
       const resDeb = document.getElementById('linux-result-debian');
       const resOther = document.getElementById('linux-result-other');
 
@@ -884,9 +1752,11 @@
       const otherFile = document.getElementById('other-appimage-file');
       const dlLinuxAppImage = document.getElementById('dl-linux-appimage');
 
-      function updateView() {
+      function updateDownloadView() {
         tabWin.classList.toggle('active', selectedOs === 'windows');
         tabLin.classList.toggle('active', selectedOs === 'linux');
+        tabWin.setAttribute('aria-selected', String(selectedOs === 'windows'));
+        tabLin.setAttribute('aria-selected', String(selectedOs === 'linux'));
         panelWin.classList.toggle('hidden', selectedOs !== 'windows');
         panelLin.classList.toggle('hidden', selectedOs !== 'linux');
 
@@ -898,13 +1768,14 @@
         });
 
         const archLabel = selectedArch === 'arm64' ? 'ARM64' : 'x64';
-
         if (selectedDistro === 'debian' || selectedDistro === 'fedora') {
           resDeb.classList.remove('hidden');
           resOther.classList.add('hidden');
           const installerName = 'UliBlock-Installer-linux-' + selectedArch + '-' + VERSION + '.AppImage';
           const distroName = selectedDistro === 'fedora' ? 'Fedora / RHEL / openSUSE' : 'Debian / Ubuntu';
-          debInstTitle.textContent = 'Установщик UliBlock для ' + distroName + ' (' + archLabel + ')';
+          debInstTitle.textContent = currentLang === 'en' ?
+            'UliBlock Installer for ' + distroName + ' (' + archLabel + ')' :
+            'Установщик UliBlock для ' + distroName + ' (' + archLabel + ')';
           debInstFile.textContent = installerName;
           debInstStepFile.textContent = installerName;
           dlLinuxInstaller.href = BASE + installerName;
@@ -913,30 +1784,32 @@
           resOther.classList.remove('hidden');
           const appImageArch = selectedArch === 'arm64' ? 'arm64' : 'x86_64';
           const appImageName = 'UliBlock-linux-' + appImageArch + '-' + VERSION + '.AppImage';
-          otherTitle.textContent = 'Портативный UliBlock AppImage (' + archLabel + ')';
+          otherTitle.textContent = currentLang === 'en' ?
+            'Portable UliBlock AppImage (' + archLabel + ')' :
+            'Портативный UliBlock AppImage (' + archLabel + ')';
           otherFile.textContent = appImageName;
           dlLinuxAppImage.href = BASE + appImageName;
         }
       }
 
-      tabWin.addEventListener('click', function () { selectedOs = 'windows'; updateView(); });
-      tabLin.addEventListener('click', function () { selectedOs = 'linux'; updateView(); });
+      tabWin.addEventListener('click', function () { selectedOs = 'windows'; updateDownloadView(); });
+      tabLin.addEventListener('click', function () { selectedOs = 'linux'; updateDownloadView(); });
 
       document.querySelectorAll('[data-arch]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           selectedArch = btn.getAttribute('data-arch');
-          updateView();
+          updateDownloadView();
         });
       });
 
       document.querySelectorAll('[data-distro]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           selectedDistro = btn.getAttribute('data-distro');
-          updateView();
+          updateDownloadView();
         });
       });
 
-      updateView();
+      updateDownloadView();
     })();
   </script>
 </body>
